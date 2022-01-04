@@ -6,7 +6,11 @@ extern "C"
 {
 #endif
 
-
+typedef struct xmlite_xml
+{
+	void * xmlite_xml_mem;
+	
+} xmlite_xml_t;
 
 
 
