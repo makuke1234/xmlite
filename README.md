@@ -24,6 +24,7 @@ ease of use and almost full compliancy with XML standard, nothing else.
 	* UTF-32 (little endian & big endian)
 * BOM to DOM conversion
 
+
 # C bindings
 
 Yet again bindings for C are planned like with my other jsonlite library.
