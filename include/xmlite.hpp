@@ -411,8 +411,52 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 
 inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t length, bool & init)
 {
+	static constexpr const uint8_t BOMLens[]
+	{
+		4,
+		4,
+		3,
+		3,
+		3,
+		2,
+		2	
+	};
+	static constexpr const uint8_t BOMS[][5]
+	{
+		{ 0xFF, 0xFE, 0x00, 0x00 },
+		{ 0x00, 0x00, 0xFE, 0xFF },
+		{ 0xEF, 0xBB, 0xBF },
+		{ 0x2B, 0x2F, 0x76 },
+		{ 0xF7, 0x64, 0x4C },
+		{ 0xFF, 0xFE },
+		{ 0xFE, 0xFF },
+	};
+	static constexpr const char * BOMStrings[]
+	{
+		"UTF-32LE"
+		"UTF-32BE",
+		"UTF-8",
+		"UTF-7",
+		"UTF-1",
+		"UTF-16LE",
+		"UTF-16BE",
+	};
+
 	init = false;
 	const char * start = xmlFile, * end = xmlFile + length;
+
+	// Check for BOM first
+	for (uint8_t i = 0, sz = sizeof(BOMLens) / sizeof(*BOMLens); i < sz; ++i)
+	{
+		if ((end - start) >= BOMLens[i])
+		{
+			if (memcmp(start, BOMS[i], BOMLens[i]) == 0)
+			{
+				return BOMStrings[i];
+			}
+		}
+	}
+
 	for (; start != end && *start != '\0'; ++start)
 	{
 		if (strncmp(start, "<?", 2) == 0)

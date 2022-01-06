@@ -7,7 +7,7 @@
 
 int main()
 {
-	std::ifstream input("test.xml");
+	std::ifstream input("test.xml", std::ios::binary);
 
 	std::stringstream iss;
 	iss << input.rdbuf();
