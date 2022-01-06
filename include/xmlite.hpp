@@ -44,9 +44,10 @@ namespace xmlite
 			"This is not an end-point in the object structure!",
 			"The array does not contain an item at this index!",
 
-
+			"Incorrect tag!",
+			"No tag terminator found!",
+			"No terminating '\"' found!"
 		};
-
 	public:
 		explicit exception(Type type) noexcept
 			: m_type(type)
@@ -666,7 +667,7 @@ inline std::string convertDOM(const char * bom, std::size_t length)
 {
 	std::string dom;
 
-	
+
 
 	return dom;
 }
