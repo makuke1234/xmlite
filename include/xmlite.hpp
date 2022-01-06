@@ -123,6 +123,39 @@ namespace xmlite
 			"1.0",
 			"1.1"
 		};
+
+		enum class BOMencoding : std::uint8_t
+		{
+			UTF_32LE,
+			UTF_32BE,
+			UTF_8,
+			UTF_7,
+			UTF_1,
+			UTF_16LE,
+			UTF_16BE,
+
+			enum_size
+		};
+		static constexpr const uint8_t BOMLength[]
+		{
+			4,
+			4,
+			3,
+			3,
+			3,
+			2,
+			2
+		};
+		static constexpr const char * BOMStrings[]
+		{
+			"UTF-32LE",
+			"UTF-32BE",
+			"UTF-8",
+			"UTF-7",
+			"UTF-1",
+			"UTF-16LE",
+			"UTF-16BE"
+		};
 	
 	private:
 		friend class xmlnode;
@@ -170,34 +203,9 @@ namespace xmlite
 		}
 
 		static inline version getVersion(const char * xmlFile, std::size_t length, bool & init);
-		static version getVersion(const char * xmlFile, bool & init)
-		{
-			return getVersion(xmlFile, std::char_traits<char>::length(xmlFile), init);
-		}
-		static version getVersion(const std::string & xmlFile, bool & init)
-		{
-			return getVersion(xmlFile.c_str(), xmlFile.length(), init);
-		}
-
 		static inline std::string getEncoding(const char * xmlFile, std::size_t length, bool & init);
-		static std::string getEncoding(const char * xmlFile, bool & init)
-		{
-			return getEncoding(xmlFile, std::char_traits<char>::length(xmlFile), init);
-		}
-		static std::string getEncoding(const std::string & xmlFile, bool & init)
-		{
-			return getEncoding(xmlFile.c_str(), xmlFile.length(), init);
-		}
-		
 		static inline bool getStandalone(const char * xmlFile, std::size_t length, bool & init);
-		static bool getStandalone(const char * xmlFile, bool & init)
-		{
-			return getStandalone(xmlFile, std::char_traits<char>::length(xmlFile), init);
-		}
-		static bool getStandalone(const std::string & xmlFile, bool & init)
-		{
-			return getStandalone(xmlFile.c_str(), xmlFile.length(), init);
-		}
+		static inline std::int8_t getBOM(const char * xmlFile, std::size_t length);
 
 		std::string dumpHeader() const
 		{
@@ -233,7 +241,11 @@ namespace xmlite
 	};
 
 	constexpr const char * xml::versionStr[];
+	constexpr const uint8_t xml::BOMLength[];
+	constexpr const char * xml::BOMStrings[];
 
+
+	inline std::string convertDOM(const char * bom, std::size_t length);
 }
 
 
@@ -256,9 +268,27 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 
 inline xmlite::xmlnode::xmlnode(const char * xmlFile, std::size_t length)
 {
-	xml::innerCheck(xmlFile, length);
-
 	const char * start = xmlFile, * end = xmlFile + length;
+	
+	std::string str;
+
+	auto BOM = xml::getBOM(xmlFile, length);
+	if (BOM != -1)
+	{
+		if (BOM != underlying_cast(xml::BOMencoding::UTF_8))
+		{
+			str   = xmlite::convertDOM(xmlFile, length);
+			start = str.c_str();
+			end   = str.c_str() + str.length();
+		}
+		else
+		{
+			start += xml::BOMLength[BOM];
+		}
+	}
+
+	xml::innerCheck(start, end - start);
+
 	for (; start != end && *start != '\0'; ++start)
 	{
 		if (strncmp(start, "?>", 2) == 0)
@@ -408,54 +438,19 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 
 	return {};
 }
-
 inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t length, bool & init)
 {
-	static constexpr const uint8_t BOMLens[]
-	{
-		4,
-		4,
-		3,
-		3,
-		3,
-		2,
-		2
-	};
-	static constexpr const uint8_t BOMS[][5]
-	{
-		{ 0xFF, 0xFE, 0x00, 0x00 },
-		{ 0x00, 0x00, 0xFE, 0xFF },
-		{ 0xEF, 0xBB, 0xBF },
-		{ 0x2B, 0x2F, 0x76 },
-		{ 0xF7, 0x64, 0x4C },
-		{ 0xFF, 0xFE },
-		{ 0xFE, 0xFF }
-	};
-	static constexpr const char * BOMStrings[]
-	{
-		"UTF-32LE",
-		"UTF-32BE",
-		"UTF-8",
-		"UTF-7",
-		"UTF-1",
-		"UTF-16LE",
-		"UTF-16BE"
-	};
-
 	init = false;
-	const char * start = xmlFile, * end = xmlFile + length;
-
+	
+	auto BOM = getBOM(xmlFile, length);
 	// Check for BOM first
-	for (uint8_t i = 0, sz = sizeof(BOMLens) / sizeof(*BOMLens); i < sz; ++i)
+	if (BOM != -1)
 	{
-		if ((end - start) >= BOMLens[i])
-		{
-			if (memcmp(start, BOMS[i], BOMLens[i]) == 0)
-			{
-				return BOMStrings[i];
-			}
-		}
+		init = true;
+		return BOMStrings[BOM];
 	}
+
+	const char * start = xmlFile, * end = xmlFile + length;
 
 	for (; start != end && *start != '\0'; ++start)
 	{
@@ -545,7 +540,6 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 
 	return { defEnc };
 }
-
 inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length, bool & init)
 {
 	init = false;
@@ -642,3 +636,38 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 
 	return {};
 }
+inline std::int8_t xmlite::xml::getBOM(const char * xmlFile, std::size_t length)
+{
+	static constexpr const uint8_t BOMS[][5]
+	{
+		{ 0xFF, 0xFE, 0x00, 0x00 },
+		{ 0x00, 0x00, 0xFE, 0xFF },
+		{ 0xEF, 0xBB, 0xBF },
+		{ 0x2B, 0x2F, 0x76 },
+		{ 0xF7, 0x64, 0x4C },
+		{ 0xFF, 0xFE },
+		{ 0xFE, 0xFF }
+	};
+	
+	for (uint8_t i = 0, sz = sizeof(BOMLength) / sizeof(*BOMLength); i < sz; ++i)
+	{
+		if (length >= BOMLength[i])
+		{
+			if (memcmp(xmlFile, BOMS[i], BOMLength[i]) == 0)
+			{
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+inline std::string convertDOM(const char * bom, std::size_t length)
+{
+	std::string dom;
+
+	
+
+	return dom;
+}
+

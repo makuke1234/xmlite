@@ -13,6 +13,17 @@ Yes, this library is designed to aim for fast compilation times, simplicity and
 ease of use and almost full compliancy with XML standard, nothing else.
 
 
+# Features
+
+* DOM support by default
+* BOM support:
+	* UTF-1
+	* UTF-7
+	* UTF-8
+	* UTF-16 (little endian & big endian)
+	* UTF-32 (little endian & big endian)
+* BOM to DOM conversion
+
 # C bindings
 
 Yet again bindings for C are planned like with my other jsonlite library.
