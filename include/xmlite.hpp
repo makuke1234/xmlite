@@ -170,31 +170,31 @@ namespace xmlite
 		}
 
 		static inline version getVersion(const char * xmlFile, std::size_t length, bool & init);
-		static inline version getVersion(const char * xmlFile, bool & init)
+		static version getVersion(const char * xmlFile, bool & init)
 		{
 			return getVersion(xmlFile, std::char_traits<char>::length(xmlFile), init);
 		}
-		static inline version getVersion(const std::string & xmlFile, bool & init)
+		static version getVersion(const std::string & xmlFile, bool & init)
 		{
 			return getVersion(xmlFile.c_str(), xmlFile.length(), init);
 		}
 
 		static inline std::string getEncoding(const char * xmlFile, std::size_t length, bool & init);
-		static inline std::string getEncoding(const char * xmlFile, bool & init)
+		static std::string getEncoding(const char * xmlFile, bool & init)
 		{
 			return getEncoding(xmlFile, std::char_traits<char>::length(xmlFile), init);
 		}
-		static inline std::string getEncoding(const std::string & xmlFile, bool & init)
+		static std::string getEncoding(const std::string & xmlFile, bool & init)
 		{
 			return getEncoding(xmlFile.c_str(), xmlFile.length(), init);
 		}
 		
 		static inline bool getStandalone(const char * xmlFile, std::size_t length, bool & init);
-		static inline bool getStandalone(const char * xmlFile, bool & init)
+		static bool getStandalone(const char * xmlFile, bool & init)
 		{
 			return getStandalone(xmlFile, std::char_traits<char>::length(xmlFile), init);
 		}
-		static inline bool getStandalone(const std::string & xmlFile, bool & init)
+		static bool getStandalone(const std::string & xmlFile, bool & init)
 		{
 			return getStandalone(xmlFile.c_str(), xmlFile.length(), init);
 		}
