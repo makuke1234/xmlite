@@ -419,7 +419,7 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		3,
 		3,
 		2,
-		2	
+		2
 	};
 	static constexpr const uint8_t BOMS[][5]
 	{
@@ -429,17 +429,17 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		{ 0x2B, 0x2F, 0x76 },
 		{ 0xF7, 0x64, 0x4C },
 		{ 0xFF, 0xFE },
-		{ 0xFE, 0xFF },
+		{ 0xFE, 0xFF }
 	};
 	static constexpr const char * BOMStrings[]
 	{
-		"UTF-32LE"
+		"UTF-32LE",
 		"UTF-32BE",
 		"UTF-8",
 		"UTF-7",
 		"UTF-1",
 		"UTF-16LE",
-		"UTF-16BE",
+		"UTF-16BE"
 	};
 
 	init = false;
