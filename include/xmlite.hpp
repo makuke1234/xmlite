@@ -403,7 +403,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 	xmlite::xmlnode node;
 
 	const char * start = xml, * end = xml + len;
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		// if found tag, add it to values tag
 		if (strncmp(start, "<", 1) == 0)
@@ -438,7 +438,7 @@ inline xmlite::xmlnode::xmlnode(const char * xmlFile, std::size_t length)
 
 	xml::innerCheck(start, end - start);
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "?>", 2) == 0)
 		{
@@ -496,7 +496,7 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 	const char * start = xml, * end = xml + len;
 
 	// Check for heading
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "<?xml", 5) == 0)
 		{
@@ -509,7 +509,7 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		throw exception(exception::Type::ParseIncorrectHeader);
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "?>", 2) == 0)
 		{
@@ -522,14 +522,39 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		throw exception(exception::Type::ParseIncorrectHeaderTerminator);
 	}
 
+	auto checkTag = [](const char * start, const char * end)
+	{
+		for (; start != end; ++start)
+		{
+			if (strncmp(start, "/>", 2) == 0)
+			{
+				start += 2;
+				return start;
+			}
+			else if (*start == '>')
+			{
+				++start;
+				break;
+			}
+		}
 
+		if (start == end)
+		{
+			throw exception(exception::Type::ParseIncorrectTag);
+		}
+
+		for (; start != end; ++start)
+		{
+			
+		}
+	};
 }
 
 inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::size_t length, bool & init)
 {
 	init = false;
 	const char * start = xmlFile, * end = xmlFile + length;
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "<?xml", 5) == 0)
 		{
@@ -554,7 +579,7 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, " version", 8) == 0)
 		{
@@ -567,7 +592,7 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start == '=')
 		{
@@ -580,7 +605,7 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start >= '0' && *start <= '9')
 		{
@@ -613,7 +638,7 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 
 	const char * start = xmlFile, * end = xmlFile + length;
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "<?xml", 5) == 0)
 		{
@@ -638,7 +663,7 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		return { defEnc };
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, " encoding", 9) == 0)
 		{
@@ -651,7 +676,7 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		return { defEnc };
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start == '=')
 		{
@@ -664,7 +689,7 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		return { defEnc };
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start == '"')
 		{
@@ -692,7 +717,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 {
 	init = false;
 	const char * start = xmlFile, * end = xmlFile + length;
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "<?xml", 5) == 0)
 		{
@@ -717,7 +742,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, " standalone", 11) == 0)
 		{
@@ -730,7 +755,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start == '=')
 		{
@@ -743,7 +768,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (*start == '"')
 		{
@@ -756,7 +781,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 		return {};
 	}
 
-	for (; start != end && *start != '\0'; ++start)
+	for (; start != end; ++start)
 	{
 		if (strncmp(start, "yes\"", 4) == 0)
 		{
