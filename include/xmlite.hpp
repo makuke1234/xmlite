@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <stack>
 #include <type_traits>
 #include <exception>
 
@@ -50,6 +51,7 @@ namespace xmlite
 		};
 
 		Type m_type{ Type::Unknown };
+		std::string m_optMsg;
 		static constexpr const char * exceptionMessages[xmlite::underlying_cast(Type::enum_size)]
 		{
 			"Unknown exception.",
@@ -67,10 +69,22 @@ namespace xmlite
 			: m_type(type)
 		{
 		}
+		explicit exception(Type type, const char * extra, std::size_t extraLen)
+			: m_type(type), m_optMsg(this->exceptionMessages[xmlite::underlying_cast(type)] +
+				std::string(" At: \"") + std::string{ extra, extraLen } + '\"')
+		{
+		}
 
 		const char * what() const throw() override
 		{
-			return this->exceptionMessages[xmlite::underlying_cast(this->m_type)];
+			if (this->m_optMsg.empty())
+			{	
+				return this->exceptionMessages[xmlite::underlying_cast(this->m_type)];
+			}
+			else
+			{
+				return this->m_optMsg.c_str();
+			}
 		}
 
 	};
@@ -490,7 +504,6 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 	}
 }
 
-
 inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 {
 	const char * start = xml, * end = xml + len;
@@ -522,32 +535,92 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		throw exception(exception::Type::ParseIncorrectHeaderTerminator);
 	}
 
-	auto checkTag = [](const char * start, const char * end)
+	struct tag
 	{
-		for (; start != end; ++start)
+		const char * addr;
+		std::size_t len;
+		tag(const char * v1, std::size_t v2)
+			: addr(v1), len(v2)
 		{
-			if (strncmp(start, "/>", 2) == 0)
+		}
+	};
+
+	std::stack<tag> tagStack;
+
+	auto checkTagStart = [&tagStack](const char *& start, const char * end)
+	{
+		const char * tagStart = start + 1, * tagEnd = NULL;
+		const char * s = start;
+		for (; s != end; ++s)
+		{
+			if (strncmp(s, "/>", 2) == 0)
 			{
-				start += 2;
-				return start;
+				start = s + 2;
+				return;
 			}
-			else if (*start == '>')
+			else if (*s == '>')
 			{
-				++start;
+				if (tagEnd == NULL)
+				{
+					tagEnd = s;
+				}
+				++s;
+				start = s;
 				break;
+			}
+			else if (*s == ' ' && tagEnd == NULL)
+			{
+				tagEnd = s;
 			}
 		}
 
-		if (start == end)
+		if (s == end)
 		{
 			throw exception(exception::Type::ParseIncorrectTag);
 		}
 
-		for (; start != end; ++start)
-		{
-			
-		}
+		tagStack.emplace(tagStart, std::size_t(tagEnd - tagStart));
 	};
+	auto checkTagEnd = [&tagStack](const char *& s, const char * end)
+	{
+		const auto & currentTag = tagStack.top();
+
+		for (; s != end; ++s)
+		{
+			if (strncmp(s, "</", 2) == 0 && strncmp(s + 2, currentTag.addr, currentTag.len) == 0 &&
+				*(s + 2 + currentTag.len) == '>'
+			)
+			{
+				tagStack.pop();
+				s += 2 + currentTag.len + 1;
+				return;
+			}
+		}
+
+		throw exception(exception::Type::ParseNoTerminatingTag, currentTag.addr, currentTag.len);
+	};
+	
+
+	while (start != end)
+	{
+		if (((start + 1) != end) && *start == '<' && *(start + 1) != '/')
+		{
+			checkTagStart(start, end);
+		}
+		else if (((start + 1) != end) && *start == '<' && *(start + 1) == '/')
+		{
+			checkTagEnd(start, end);
+		}
+		else
+		{
+			++start;
+		}
+	}
+
+	if (!tagStack.empty())
+	{
+		throw exception(exception::Type::ParseNoTerminatingTag, tagStack.top().addr, tagStack.top().len);
+	}
 }
 
 inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::size_t length, bool & init)
