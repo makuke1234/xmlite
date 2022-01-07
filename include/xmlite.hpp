@@ -44,6 +44,7 @@ namespace xmlite
 			ParseIncorrectHeader,
 			ParseIncorrectHeaderTerminator,
 			ParseIncorrectTag,
+			ParseIncorrectComment,
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
 
@@ -61,8 +62,9 @@ namespace xmlite
 			"Incorrect XML header!",
 			"Incorrect XML header terminator!",
 			"Incorrect tag!",
+			"Incorrect comment format!"
 			"No tag terminator found!",
-			"No terminating '\"' found!"
+			"No terminating '\"' found!",
 		};
 	public:
 		explicit exception(Type type) noexcept
@@ -596,13 +598,37 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 
 		throw exception(exception::Type::ParseNoTerminatingTag, currentTag.addr, currentTag.len);
 	};
+
+	auto checkComment = [](const char *& s, const char * end)
+	{
+		if (strncmp(s, "<!--", 4) != 0)
+		{
+			return false;
+		}
+
+		s += 4;
+
+		for (; s != end; ++s)
+		{
+			if (strncmp(s, "-->", 3) == 0)
+			{
+				s += 3;
+				return true;
+			}
+		}
+
+		throw exception(exception::Type::ParseIncorrectComment);
+	};
 	
 
 	while (start != end)
 	{
 		if (((start + 1) != end) && *start == '<' && *(start + 1) != '/')
 		{
-			checkTagStart(start, end);
+			if (!checkComment(start, end))
+			{
+				checkTagStart(start, end);
+			}
 		}
 		else if (((start + 1) != end) && *start == '<' && *(start + 1) == '/')
 		{
