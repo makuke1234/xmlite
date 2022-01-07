@@ -87,7 +87,7 @@ namespace xmlite
 		objtype m_role{ objtype::EmptyObject };
 
 		static inline xmlnode innerParse(const char * xml, std::size_t len);
-		inline std::string innerDump(std::size_t depth = 0) const;
+		inline std::string innerDump(std::size_t depth) const;
 
 	public:
 
@@ -110,7 +110,7 @@ namespace xmlite
 
 		std::string dump() const
 		{
-			return this->innerDump();
+			return this->innerDump(0);
 		}
 
 	};
