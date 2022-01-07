@@ -1,0 +1,11 @@
+<?xml version="1.0" standalone="no"?>
+<catalog>
+	<person>
+		<name>Joe&#214;</name>
+		<age>15</age>
+	</person>
+	<person>
+		<name>Gabriel</name>
+		<age>35</age>
+	</person>
+</catalog>

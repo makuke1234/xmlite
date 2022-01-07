@@ -5,9 +5,20 @@
 #include <string>
 #include <iostream>
 
-int main()
+int main(int argc, char ** argv)
 {
-	std::ifstream input("test.xml", std::ios::binary);
+	if (argc < 2)
+	{
+		std::cerr << "Too few arguments!" << std::endl;
+		return 1;
+	}
+	
+	std::ifstream input(argv[1], std::ios::binary);
+	if (!input.good())
+	{
+		std::cerr << "File bad!" << std::endl;
+		return 1;
+	}
 
 	std::stringstream iss;
 	iss << input.rdbuf();
@@ -16,7 +27,9 @@ int main()
 
 	std::string str = iss.str();
 
-	std::cout << "File contents: \"" << str << "\"\n";
+	std::string dom = xmlite::convertDOM(str.c_str(), str.length());
+
+	std::cout << "File contents in DOM (UTF-8): \"" << dom << "\"\n";
 
 	xmlite::xml xmlObject(str);
 

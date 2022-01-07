@@ -11,6 +11,14 @@
 
 namespace xmlite
 {
+	inline std::string convertDOM(const char * bomStr, std::size_t length);
+
+	inline std::string UTF32toUTF8(char32_t utfCh);
+	inline std::string UTF16toUTF8(uint32_t utfCh);
+
+	inline std::string UTF32toUTF8(const char32_t * utfStr, std::size_t length);
+	inline std::string UTF16toUTF8(const char16_t * utfStr, std::size_t length);
+
 	template<typename T, typename U = typename std::underlying_type<T>::type>
 	constexpr U underlying_cast(T enumClass) noexcept
 	{
@@ -175,11 +183,21 @@ namespace xmlite
 	public:
 
 		xml(const char * xmlFile, std::size_t length)
-			: m_ver(getVersion(xmlFile, length, m_verInit)),
-			m_encoding(getEncoding(xmlFile, length, m_encInit)),
-			m_standalone(getStandalone(xmlFile, length, m_saInit)),
-			m_nodes(xmlFile, length)
 		{
+			std::string file;
+			
+			const char * start = xmlFile;
+			if (getBOM(xmlFile, length) != -1)
+			{
+				file   = convertDOM(xmlFile, length);
+				start  = file.c_str();
+				length = file.length();
+			}
+
+			this->m_ver        = getVersion(start, length, this->m_verInit);
+			this->m_encoding   = getEncoding(xmlFile, length, this->m_encInit);
+			this->m_standalone = getStandalone(start, length, this->m_saInit);
+			this->m_nodes      = { start, length };
 		}
 		xml(const char * xmlFile)
 			: xml(xmlFile, std::char_traits<char>::length(xmlFile))
@@ -219,11 +237,6 @@ namespace xmlite
 				str += '"';
 			}
 
-			if (this->m_encInit)
-			{
-				str += " encoding=\"" + this->m_encoding + '"';
-			}
-
 			if (this->m_saInit)
 			{
 				str += " standalone=";
@@ -244,11 +257,142 @@ namespace xmlite
 	constexpr const char * xml::versionStr[];
 	constexpr const uint8_t xml::BOMLength[];
 	constexpr const char * xml::BOMStrings[];
-
-
-	inline std::string convertDOM(const char * bom, std::size_t length);
 }
 
+
+inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
+{
+	auto convertBOM_UTF16 = [](const char * str, std::size_t len)
+	{
+		auto realStr = reinterpret_cast<const char16_t *>(str);
+		auto realLen = len / 2;
+		
+		return xmlite::UTF16toUTF8(realStr, realLen);
+	};
+
+	auto convertBOM_UTF32 = [](const char * str, std::size_t len)
+	{
+		auto realStr = reinterpret_cast<const char32_t *>(str);
+		auto realLen = len / 4;
+
+		return xmlite::UTF32toUTF8(realStr, realLen);
+	};
+
+	auto bom = xml::getBOM(bomStr, length);
+	auto bomLen = xml::BOMLength[bom];
+
+	switch (static_cast<xml::BOMencoding>(bom))
+	{
+	case xml::BOMencoding::UTF_1:
+	case xml::BOMencoding::UTF_7:
+	case xml::BOMencoding::UTF_8:
+		return { bomStr + bomLen, length - bomLen };
+	case xml::BOMencoding::UTF_16LE:
+		return convertBOM_UTF16(bomStr + bomLen, length - bomLen);
+	case xml::BOMencoding::UTF_16BE:
+	{
+		std::string UTF16LEStr{ bomStr + bomLen, length - bomLen };
+		// Convert big endian to little endian
+		for (auto it = UTF16LEStr.begin(); it != UTF16LEStr.end(); it += 2)
+		{
+			std::swap(*it, *(it + 1));
+		}
+
+		return convertBOM_UTF16(UTF16LEStr.c_str(), UTF16LEStr.length());
+	}
+	case xml::BOMencoding::UTF_32LE:
+		return convertBOM_UTF32(bomStr + bomLen, length - bomLen);
+	case xml::BOMencoding::UTF_32BE:
+	{
+		std::string UTF32LEStr{ bomStr + bomLen, length - bomLen };
+		// Convert big endian to little endian
+		for (auto it = UTF32LEStr.begin(); it != UTF32LEStr.end(); it += 4)
+		{
+			std::swap(*it,       *(it + 3));
+			std::swap(*(it + 1), *(it + 2));
+		}
+
+		return convertBOM_UTF32(UTF32LEStr.c_str(), UTF32LEStr.length());
+	}
+	default:
+		return { bomStr, length };
+	}
+}
+
+
+inline std::string xmlite::UTF32toUTF8(char32_t c)
+{
+	std::string utf8;
+
+	using u8 = typename std::uint8_t;
+
+	std::size_t nby = c <= 0x7FU ? 1 : c <= 0x7FFU ? 2 : c <= 0xFFFFU ? 3 : c <= 0x1FFFFFU ? 4 : c <= 0x3FFFFFFU ? 5 : c <= 0x7FFFFFFFU ? 6 : 7;
+	utf8 += nby <= 1 ? u8(c) : ((u8(0xFFU) << (8 - nby)) | u8(c >> (6 * (nby - 1))));
+	for (std::size_t i = 1; i < nby; ++i)
+	{
+		utf8 += u8(0x80U | (u8(0x3FU) & u8(c >> (6 * (nby - 1 - i)))));
+	}
+
+	return utf8;
+}
+inline std::string xmlite::UTF16toUTF8(uint32_t c)
+{
+	std::string utf8;
+
+	if (c <= 0x7F)
+	{
+		utf8 += c;
+	}
+	else if (c > 0x10FFFF)
+	{
+		utf8 += (char)0xEF;
+		utf8 += (char)0xBF;
+		utf8 += (char)0xBD;
+	}
+	else
+	{
+		std::size_t nby = c <= 0x7FF ? 1 : c <= 0xFFFF ? 2 : 3;
+		utf8.resize(nby);
+		for (std::size_t i = 1; i < nby; ++i)
+		{
+			utf8[nby - i] = 0x80 | (c & 0x3F);
+			c >>= 6;
+		}
+		utf8[0] = (0x1E << (6 - nby)) | (c & (0x3F >> nby));
+	}
+
+	return utf8;
+}
+
+inline std::string xmlite::UTF32toUTF8(const char32_t * utfStr, std::size_t length)
+{
+	std::string utf8;
+	for (const char32_t * end = utfStr + length; utfStr != end && *utfStr != 0; ++utfStr)
+	{
+		utf8 += UTF32toUTF8(*utfStr);
+	}
+	return utf8;
+}
+inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t length)
+{
+	std::string utf8;
+	for (const char16_t * end = utfStr + length; utfStr != end && *utfStr != u'\0'; ++utfStr)
+	{
+		const char16_t c = *utfStr;
+		if ((c <= 0xD7FF) || (c >= 0xE000))
+		{
+			utf8 += UTF16toUTF8(c);
+		}
+		else if (c >= 0xD800 && c <= 0xDFFF)
+		{
+			++utfStr;
+			const char16_t c2 = *utfStr;
+			utf8 += UTF16toUTF8((uint32_t(c - 0xD800) << 10) + uint32_t(c2 - 0xDC00) + 0x10000);
+		}
+	}
+
+	return utf8;
+}
 
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)
 {
@@ -359,8 +503,9 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 	const char * start = xmlFile, * end = xmlFile + length;
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "<?", 2) == 0)
+		if (strncmp(start, "<?xml", 5) == 0)
 		{
+			start += 5;
 			break;
 		}
 	}
@@ -383,22 +528,9 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "xml", 3) == 0)
+		if (strncmp(start, " version", 8) == 0)
 		{
-			start += 3;
-			break;
-		}
-	}
-	if (start == end)
-	{
-		return {};
-	}
-
-	for (; start != end && *start != '\0'; ++start)
-	{
-		if (strncmp(start, "version", 7) == 0)
-		{
-			start += 7;
+			start += 8;
 			break;
 		}
 	}
@@ -443,20 +575,21 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 {
 	init = false;
 	
-	auto BOM = getBOM(xmlFile, length);
+	auto bom = getBOM(xmlFile, length);
 	// Check for BOM first
-	if (BOM != -1)
+	if (bom != -1)
 	{
 		init = true;
-		return BOMStrings[BOM];
+		return BOMStrings[bom];
 	}
 
 	const char * start = xmlFile, * end = xmlFile + length;
 
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "<?", 2) == 0)
+		if (strncmp(start, "<?xml", 5) == 0)
 		{
+			start += 5;
 			break;
 		}
 	}
@@ -479,22 +612,9 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "xml", 3) == 0)
+		if (strncmp(start, " encoding", 9) == 0)
 		{
-			start += 3;
-			break;
-		}
-	}
-	if (start == end)
-	{
-		return { defEnc };
-	}
-
-	for (; start != end && *start != '\0'; ++start)
-	{
-		if (strncmp(start, "encoding", 8) == 0)
-		{
-			start += 8;
+			start += 9;
 			break;
 		}
 	}
@@ -529,13 +649,12 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 		return { defEnc };
 	}
 
-	for (; start != end; --end)
+	for (const char * end2 = start + 1; start != end; ++end2)
 	{
-		if (*(end - 1) == '"')
+		if (*end2 == '"')
 		{
-			--end;
 			init = true;
-			return { start, static_cast<std::size_t>(end - start) };
+			return { start, static_cast<std::size_t>(end2 - start) };
 		}
 	}
 
@@ -547,8 +666,9 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 	const char * start = xmlFile, * end = xmlFile + length;
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "<?", 2) == 0)
+		if (strncmp(start, "<?xml", 5) == 0)
 		{
+			start += 5;
 			break;
 		}
 	}
@@ -571,22 +691,9 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "xml", 3) == 0)
+		if (strncmp(start, " standalone", 11) == 0)
 		{
-			start += 3;
-			break;
-		}
-	}
-	if (start == end)
-	{
-		return {};
-	}
-
-	for (; start != end && *start != '\0'; ++start)
-	{
-		if (strncmp(start, "standalone", 10) == 0)
-		{
-			start += 10;
+			start += 11;
 			break;
 		}
 	}
@@ -623,12 +730,12 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 
 	for (; start != end && *start != '\0'; ++start)
 	{
-		if (strncmp(start, "yes", 3) == 0)
+		if (strncmp(start, "yes\"", 4) == 0)
 		{
 			init = true;
 			return true;
 		}
-		else if (strncmp(start, "no", 2) == 0)
+		else if (strncmp(start, "no\"", 3) == 0)
 		{
 			init = true;
 			return false;
@@ -662,13 +769,3 @@ inline std::int8_t xmlite::xml::getBOM(const char * xmlFile, std::size_t length)
 	}
 	return -1;
 }
-
-inline std::string convertDOM(const char * bom, std::size_t length)
-{
-	std::string dom;
-
-
-
-	return dom;
-}
-
