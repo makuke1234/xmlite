@@ -26,11 +26,13 @@ namespace xmlite
 	}
 
 	class xmlnode;
+	class xml;
 
 	class exception : public std::exception
 	{
 	private:
 		friend class xmlnode;
+		friend class xml;
 		
 		enum class Type : std::uint_fast8_t
 		{
@@ -38,6 +40,8 @@ namespace xmlite
 			NotAnEndpoint,
 			OutOfBounds,
 
+			ParseIncorrectHeader,
+			ParseIncorrectHeaderTerminator,
 			ParseIncorrectTag,
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
@@ -52,6 +56,8 @@ namespace xmlite
 			"This is not an end-point in the object structure!",
 			"The array does not contain an item at this index!",
 
+			"Incorrect XML header!",
+			"Incorrect XML header terminator!",
 			"Incorrect tag!",
 			"No tag terminator found!",
 			"No terminating '\"' found!"
@@ -489,10 +495,34 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 {
 	const char * start = xml, * end = xml + len;
 
+	// Check for heading
 	for (; start != end && *start != '\0'; ++start)
 	{
-		
+		if (strncmp(start, "<?xml", 5) == 0)
+		{
+			start += 5;
+			break;
+		}
 	}
+	if (start == end)
+	{
+		throw exception(exception::Type::ParseIncorrectHeader);
+	}
+
+	for (; start != end && *start != '\0'; ++start)
+	{
+		if (strncmp(start, "?>", 2) == 0)
+		{
+			start += 2;
+			break;
+		}
+	}
+	if (start == end)
+	{
+		throw exception(exception::Type::ParseIncorrectHeaderTerminator);
+	}
+
+
 }
 
 inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::size_t length, bool & init)
