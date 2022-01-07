@@ -248,12 +248,9 @@ namespace xmlite
 		{
 			std::string str = "<?xml";
 
-			if (this->m_verInit)
-			{
-				str += " version=\"";
-				str += versionStr[underlying_cast(this->m_ver)];
-				str += '"';
-			}
+			str += " version=\"";
+			str += versionStr[underlying_cast(this->m_ver)];
+			str += '"';
 
 			if (this->m_saInit)
 			{
