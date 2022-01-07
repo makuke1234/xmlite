@@ -71,8 +71,6 @@ namespace xmlite
 
 	constexpr const char * exception::exceptionMessages[];
 
-	class xml;
-
 	class xmlnode
 	{
 	private:
