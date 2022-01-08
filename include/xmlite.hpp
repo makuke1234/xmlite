@@ -48,6 +48,7 @@ namespace xmlite
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
 			ParseTooManyRoots,
+			ParseNoRoot,
 			ParseComment2Dashes,
 
 			enum_size
@@ -68,6 +69,7 @@ namespace xmlite
 			"No tag terminator found!",
 			"No terminating '\"' found!",
 			"Too many root elements!",
+			"No root element found!",
 			"2 dashes found in the middle of comment!"
 		};
 	public:
@@ -663,6 +665,11 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 	if (!tagStack.empty())
 	{
 		throw exception(exception::Type::ParseNoTerminatingTag, tagStack.top().addr, tagStack.top().len);
+	}
+
+	if (emptyCount != 1)
+	{
+		throw exception(exception::Type::ParseNoRoot);
 	}
 }
 
