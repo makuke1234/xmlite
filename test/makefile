@@ -1,12 +1,20 @@
 SHELL=cmd
 CXX=g++
-CDEFFLAGS=-std=c++11 -Wall -Wextra -Wpedantic
+CC=gcc
+CDEFFLAGS=-std=c11 -Wall -Wextra -Wpedantic
+CXXDEFFLAGS=-std=c++11 -Wall -Wextra -Wpedantic
 CDEBFLAGS=-g -O0
+LIB=-lxmlite -L"../C_bindings/bin/"
 
 default: debug
 
 debug: test.cpp
-	$(CXX) $^ -o test.exe $(CDEFFLAGS) $(CDEBFLAGS)
+	$(CXX) $^ -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS)
+
+debugc: test.c
+	$(CC) $^ -c -o test.o $(CDEFFLAGS) $(CDEBFLAGS)
+	$(CXX) test.o -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) $(LIB)
 
 clean:
+	del *.o
 	del *.exe
