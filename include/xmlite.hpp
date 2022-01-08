@@ -48,6 +48,7 @@ namespace xmlite
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
 			ParseTooManyRoots,
+			ParseComment2Dashes,
 
 			enum_size
 		};
@@ -66,7 +67,8 @@ namespace xmlite
 			"Incorrect comment format!",
 			"No tag terminator found!",
 			"No terminating '\"' found!",
-			"Too many root elements!"
+			"Too many root elements!",
+			"2 dashes found in the middle of comment!"
 		};
 	public:
 		explicit exception(Type type) noexcept
@@ -99,6 +101,8 @@ namespace xmlite
 	{
 	private:
 		std::string m_tag;
+		std::unordered_map<std::string, std::string> m_attributes;
+
 		std::vector<xmlnode> m_values;
 		std::unordered_map<std::string, std::size_t> m_idxMap;
 
@@ -613,9 +617,13 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 
 		for (; s != end; ++s)
 		{
-			if (strncmp(s, "-->", 3) == 0)
+			if (strncmp(s, "--", 2) == 0)
 			{
-				s += 3;
+				s += 2;
+				if (*s != '>')
+				{
+					throw exception(exception::Type::ParseComment2Dashes);
+				}
 				return true;
 			}
 		}

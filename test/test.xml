@@ -5,15 +5,17 @@
 	<name>Windscreen Wiper</name>
 	<description>The Windscreen wiper
 		automatically removes rain
-		from your windscreen, if it
+		from your windscreen, if it &#38;
 		should happen to splash there.
 		It has a rubber <ref part="1977">blade</ref>
-		which can be ordered separately
+		which can be ordered separately <store>Here</store>
 		if you need to replace it.
 	</description>
 	<happiness type="joy"/>
 </part>
-<!--This here is incorrect-->
+<!--
+	This here would be incorrect
 <root2>
 
 </root2>
+-->
