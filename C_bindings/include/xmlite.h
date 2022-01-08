@@ -26,6 +26,7 @@ typedef struct xmlite_xmlnode
 {
 	void * xmlite_xmlnode_mem;
 	char * xmlite_exceptioncode;
+	
 } xmlite_xmlnode_t;
 
 xmlite_xmlnode_t xmlite_xmlnode_make(const char * xmlFile, size_t length);
