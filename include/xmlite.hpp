@@ -47,6 +47,7 @@ namespace xmlite
 			ParseIncorrectComment,
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
+			ParseTooManyRoots,
 
 			enum_size
 		};
@@ -62,9 +63,10 @@ namespace xmlite
 			"Incorrect XML header!",
 			"Incorrect XML header terminator!",
 			"Incorrect tag!",
-			"Incorrect comment format!"
+			"Incorrect comment format!",
 			"No tag terminator found!",
 			"No terminating '\"' found!",
+			"Too many root elements!"
 		};
 	public:
 		explicit exception(Type type) noexcept
@@ -555,7 +557,7 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 			if (strncmp(s, "/>", 2) == 0)
 			{
 				start = s + 2;
-				return;
+				return true;
 			}
 			else if (*s == '>')
 			{
@@ -579,6 +581,7 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		}
 
 		tagStack.emplace(tagStart, std::size_t(tagEnd - tagStart));
+		return true;
 	};
 	auto checkTagEnd = [&tagStack](const char *& s, const char * end)
 	{
@@ -620,6 +623,7 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		throw exception(exception::Type::ParseIncorrectComment);
 	};
 	
+	std::size_t emptyCount = 0;
 
 	while (start != end)
 	{
@@ -627,7 +631,15 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		{
 			if (!checkComment(start, end))
 			{
-				checkTagStart(start, end);
+				auto tEmpty = tagStack.empty();
+				if (tEmpty & checkTagStart(start, end))
+				{
+					++emptyCount;
+					if (emptyCount > 1)
+					{
+						throw exception(exception::Type::ParseTooManyRoots);
+					}
+				}
 			}
 		}
 		else if (((start + 1) != end) && *start == '<' && *(start + 1) == '/')
