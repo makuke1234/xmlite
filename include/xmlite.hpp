@@ -235,6 +235,23 @@ namespace xmlite
 			: xml(xmlFile.c_str(), xmlFile.length())
 		{
 		}
+		xml(const xml & other) = default;
+		xml(xml && other) noexcept = default;
+		xml & operator=(const xml & other) = default;
+		xml & operator=(xml && other) noexcept = default;
+
+		operator xmlnode &()
+		{
+			return this->m_nodes;
+		}
+		operator const xmlnode &() const
+		{
+			return this->m_nodes;
+		}
+		xmlnode & get()
+		{
+			return this->m_nodes;
+		}
 
 		std::string getVersion() const
 		{
@@ -426,7 +443,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 	const char * start = xml, * end = xml + len;
 	for (; start != end; ++start)
 	{
-		// if found tag, add it to values tag
+		// if found tag, add it to key
 		if (strncmp(start, "<", 1) == 0)
 		{
 			break;

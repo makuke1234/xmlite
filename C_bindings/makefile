@@ -1,5 +1,5 @@
 CC=gcc -std=c99 -Wall -Wextra -Wpedantic
-CXX=g++ -std=c++20 -Wall -Wextra -Wpedantic
+CXX=g++ -std=c++11 -Wall -Wextra -Wpedantic
 
 CDEBFLAGS=-g -O0
 CFLAGS=-O3 -Wl,--strip-all,--build-id=none -fno-ident

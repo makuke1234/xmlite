@@ -29,6 +29,13 @@ typedef struct xmlite_xmlnode
 
 } xmlite_xmlnode_t;
 
+typedef struct xmlite_xmlnode_ref
+{
+	xmlite_xmlnode_t base;
+
+} xmlite_xmlnode_ref_t;
+
+
 xmlite_xmlnode_t xmlite_xmlnode_make(const char * xmlFile, size_t length);
 xmlite_xmlnode_t xmlite_xmlnode_makeNullTerm(const char * xmlFile);
 
@@ -55,6 +62,8 @@ xmlite_xml_t xmlite_xml_make(const char * xmlFile, size_t length);
 xmlite_xml_t xmlite_xml_makeNullTerm(const char * xmlFile);
 
 xmlite_xml_t xmlite_xml_copy(xmlite_xml_t obj);
+
+xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t obj);
 
 char * xmlite_xml_getVersion(xmlite_xml_t * obj);
 char * xmlite_xml_getEncoding(xmlite_xml_t * obj);

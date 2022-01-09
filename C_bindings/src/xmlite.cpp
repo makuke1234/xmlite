@@ -179,6 +179,11 @@ xmlite_xml_t xmlite_xml_copy(xmlite_xml_t obj)
 	return { new xmlite::xml(*static_cast<xmlite::xml *>(obj.xmlite_xml_mem)), nullptr };
 }
 
+xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t obj)
+{
+	return { &static_cast<xmlite::xml *>(obj.xmlite_xml_mem)->get(), nullptr };
+}
+
 char * xmlite_xml_getVersion(xmlite_xml_t * obj)
 {
 	try
