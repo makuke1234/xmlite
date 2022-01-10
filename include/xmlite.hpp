@@ -21,6 +21,7 @@ namespace xmlite
 	inline std::string UTF32toUTF8(const char32_t * utfStr, std::size_t length);
 	inline std::string UTF16toUTF8(const char16_t * utfStr, std::size_t length);
 	inline std::string UTF7toUTF8(const char * utfStr, std::size_t length);
+	inline std::string UTF1toUTF8(const char * utfStr, std::size_t length);
 
 	template<typename T, typename U = typename std::underlying_type<T>::type>
 	constexpr U underlying_cast(T enumClass) noexcept
@@ -328,6 +329,7 @@ inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
 	switch (static_cast<xml::BOMencoding>(bom))
 	{
 	case xml::BOMencoding::UTF_1:
+		return xmlite::UTF1toUTF8(bomStr + bomLen, length - bomLen);
 	case xml::BOMencoding::UTF_7:
 		return xmlite::UTF7toUTF8(bomStr + bomLen, length - bomLen);
 	case xml::BOMencoding::UTF_8:
@@ -570,6 +572,10 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 	}
 
 	return utf8;
+}
+inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
+{
+	return { utfStr, length };
 }
 
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)

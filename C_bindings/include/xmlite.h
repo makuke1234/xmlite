@@ -21,6 +21,7 @@ char * xmlite_UTFCodePointToUTF8Ch(uint32_t utfCh);
 char * xmlite_UTF32toUTF8(const char32_t * utfStr, size_t length);
 char * xmlite_UTF16toUTF8(const char16_t * utfStr, size_t length);
 char * xmlite_UTF7toUTF8(const char * utfStr, size_t length);
+char * xmlite_UTF1toUTF8(const char * utfStr, size_t length);
 
 // xmlite::xmlnode
 

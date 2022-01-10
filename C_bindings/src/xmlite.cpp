@@ -100,6 +100,17 @@ char * xmlite_UTF7toUTF8(const char * utfStr, size_t length)
 		return nullptr;
 	}
 }
+char * xmlite_UTF1toUTF8(const char * utfStr, size_t length)
+{
+	try
+	{
+		return inner::strconv(xmlite::UTF1toUTF8(utfStr, length));
+	}
+	catch (const std::exception &)
+	{
+		return nullptr;
+	}
+}
 
 // xmlite::xmlnode
 
