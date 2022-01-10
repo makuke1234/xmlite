@@ -59,7 +59,7 @@ namespace xmlite
 
 		Type m_type{ Type::Unknown };
 		std::string m_optMsg;
-		static constexpr const char * exceptionMessages[xmlite::underlying_cast(Type::enum_size)]
+		static constexpr const char * exceptionMessages[underlying_cast(Type::enum_size)]
 		{
 			"Unknown exception.",
 			"This is not an end-point in the object structure!",
@@ -81,7 +81,7 @@ namespace xmlite
 		{
 		}
 		explicit exception(Type type, const char * extra, std::size_t extraLen)
-			: m_type(type), m_optMsg(this->exceptionMessages[xmlite::underlying_cast(type)] +
+			: m_type(type), m_optMsg(this->exceptionMessages[underlying_cast(type)] +
 				std::string(" At: \"") + std::string{ extra, extraLen } + '\"')
 		{
 		}
@@ -90,7 +90,7 @@ namespace xmlite
 		{
 			if (this->m_optMsg.empty())
 			{
-				return this->exceptionMessages[xmlite::underlying_cast(this->m_type)];
+				return this->exceptionMessages[underlying_cast(this->m_type)];
 			}
 			else
 			{
@@ -104,12 +104,22 @@ namespace xmlite
 
 	class xmlnode
 	{
-	private:
-		std::string m_tag;
-		std::unordered_map<std::string, std::string> m_attributes;
+	public:
+		using String = std::string;
+		template<typename T, typename U>
+		using HashMap = std::unordered_map<T, U>;
+		template<typename T>
+		using Vec = std::vector<T>;
 
-		std::vector<xmlite::xmlnode> m_values;
-		std::unordered_map<std::string, std::vector<std::size_t>> m_idxMap;
+		using AttrMap = HashMap<String, String>;
+		using IdxMap = HashMap<String, Vec<std::size_t>>;
+
+	private:
+		String m_tag;
+		AttrMap m_attributes;
+
+		Vec<xmlnode> m_values;
+		IdxMap m_idxMap;
 
 		enum class objtype : std::uint8_t
 		{
@@ -145,6 +155,8 @@ namespace xmlite
 		{
 			return this->innerDump(0);
 		}
+
+
 
 	};
 
