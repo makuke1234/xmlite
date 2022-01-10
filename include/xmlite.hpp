@@ -19,6 +19,7 @@ namespace xmlite
 
 	inline std::string UTF32toUTF8(const char32_t * utfStr, std::size_t length);
 	inline std::string UTF16toUTF8(const char16_t * utfStr, std::size_t length);
+	inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length);
 
 	template<typename T, typename U = typename std::underlying_type<T>::type>
 	constexpr U underlying_cast(T enumClass) noexcept
@@ -86,7 +87,7 @@ namespace xmlite
 		const char * what() const throw() override
 		{
 			if (this->m_optMsg.empty())
-			{	
+			{
 				return this->exceptionMessages[xmlite::underlying_cast(this->m_type)];
 			}
 			else
@@ -105,8 +106,8 @@ namespace xmlite
 		std::string m_tag;
 		std::unordered_map<std::string, std::string> m_attributes;
 
-		std::vector<xmlnode> m_values;
-		std::unordered_map<std::string, std::size_t> m_idxMap;
+		std::vector<xmlite::xmlnode> m_values;
+		std::unordered_map<std::string, std::vector<std::size_t>> m_idxMap;
 
 		enum class objtype : std::uint8_t
 		{
@@ -430,6 +431,44 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 			++utfStr;
 			const char16_t c2 = *utfStr;
 			utf8 += UTFCodePointToUTF8((uint32_t(c - 0xD800) << 10) + uint32_t(c2 - 0xDC00) + 0x10000);
+		}
+	}
+
+	return utf8;
+}
+inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
+{
+	std::string utf8;
+	for (const char * end = utfStr + length; utfStr != end && *utfStr != '\0'; ++utfStr)
+	{
+		if (*utfStr == '+')
+		{
+			if (*(utfStr+1) == '-')
+			{
+				utf8 += '+';
+			}
+			else
+			{
+				// Decode code point
+				++utfStr;
+				uint32_t codePoint = 0;
+				for (; utfStr != end && *utfStr != '\0'; ++utfStr)
+				{
+					if (*utfStr == '-')
+					{
+						break;
+					}
+
+					// Add code point
+					codePoint <<= 6;
+					codePoint |= *utfStr - 'A';
+				}
+				utf8 += UTFCodePointToUTF8(codePoint);
+			}
+		}
+		else
+		{
+			utf8 += *utfStr;
 		}
 	}
 
