@@ -407,22 +407,23 @@ inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 	{
 		utf8 += char(c);
 	}
-	else if (c > 0x10FFFF)
+	else if (c <= 0x07FF)
 	{
-		utf8 += char(0xEF);
-		utf8 += char(0xBF);
-		utf8 += char(0xBD);
+		utf8 += 0xC0 | ((c >> 6) & 0x1F);
+		utf8 += 0x80 | (c        & 0x3F);
 	}
-	else
+	else if (c <= 0xFFFF)
 	{
-		std::size_t nby = c <= 0x7FF ? 1 : c <= 0xFFFF ? 2 : 3;
-		utf8.resize(nby);
-		for (std::size_t i = 1; i < nby; ++i)
-		{
-			utf8[nby - i] = 0x80 | (c & 0x3F);
-			c >>= 6;
-		}
-		utf8[0] = (0x1E << (6 - nby)) | (c & (0x3F >> nby));
+		utf8 += 0xE0 | ((c >> 12) & 0x0F);
+		utf8 += 0x80 | ((c >> 6)  & 0x3F);
+		utf8 += 0x80 | (c         & 0x3F);
+	}
+	else if (c <= 0x01FFFFF)
+	{
+		utf8 += 0xF0 | ((c >> 18) & 0x07);
+		utf8 += 0x80 | ((c >> 12) & 0x3F);
+		utf8 += 0x80 | ((c >> 6)  & 0x3F);
+		utf8 += 0x80 | (c         & 0x3F);
 	}
 
 	return utf8;

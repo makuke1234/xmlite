@@ -7,7 +7,7 @@
 
 int main(int argc, char ** argv)
 {
-	if (argc < 2)
+	if (argc < 3)
 	{
 		std::cerr << "Too few arguments!" << std::endl;
 		return 1;
@@ -30,6 +30,15 @@ int main(int argc, char ** argv)
 	std::string dom = xmlite::convertDOM(str.c_str(), str.length());
 
 	std::cout << "File contents in DOM (UTF-8): \"" << dom << "\"\n";
+
+	std::ofstream out(argv[2], std::ios::binary);
+	if (!out.good())
+	{
+		std::cerr << "File bad!" << std::endl;
+		return 2;
+	}
+	out << dom;
+	out.close();
 
 	xmlite::xml xmlObject(str);
 
