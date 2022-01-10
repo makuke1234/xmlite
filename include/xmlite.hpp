@@ -176,7 +176,7 @@ namespace xmlite
 
 			enum_size
 		};
-		static constexpr const uint8_t BOMLength[]
+		static constexpr const std::uint8_t BOMLength[]
 		{
 			4,
 			4,
@@ -300,7 +300,7 @@ namespace xmlite
 	};
 
 	constexpr const char * xml::versionStr[];
-	constexpr const uint8_t xml::BOMLength[];
+	constexpr const std::uint8_t xml::BOMLength[];
 	constexpr const char * xml::BOMStrings[];
 }
 
@@ -405,13 +405,13 @@ inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 
 	if (c <= 0x7F)
 	{
-		utf8 += c;
+		utf8 += char(c);
 	}
 	else if (c > 0x10FFFF)
 	{
-		utf8 += (char)0xEF;
-		utf8 += (char)0xBF;
-		utf8 += (char)0xBD;
+		utf8 += char(0xEF);
+		utf8 += char(0xBF);
+		utf8 += char(0xBD);
 	}
 	else
 	{
@@ -482,10 +482,10 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 		}
 	};
 
-	auto utfBufToStr = [&utf8](const char16_t * utfBuf, uint8_t shifts)
+	auto utfBufToStr = [&utf8](const char16_t * utfBuf, std::uint8_t shifts)
 	{
-		uint8_t chs = 0;
-		for (uint8_t i = 0, m = shifts / 16; i < m; ++i)
+		std::uint8_t chs = 0;
+		for (std::uint8_t i = 0, m = shifts / 16; i < m; ++i)
 		{
 			bool useAux;
 			if (i < (m - 1))
@@ -524,7 +524,7 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 			{
 				// Decode code point
 				char16_t utfBuf[3] = { 0 };
-				uint8_t utfIdx = 0, shifts = 0;
+				std::uint8_t utfIdx = 0, shifts = 0;
 				for (; utfStr != end && *utfStr != '\0'; ++utfStr)
 				{
 					if (*utfStr == '-')
@@ -535,7 +535,7 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 					// Add code point
 					shifts += 6;
 					char16_t num = char16_t(fromBase64(*utfStr));
-					uint8_t idx = shifts / 16, shifts16 = utfIdx * 16 + 16;
+					std::uint8_t idx = shifts / 16, shifts16 = utfIdx * 16 + 16;
 					if (utfIdx == idx)
 					{
 						utfBuf[utfIdx] |= num << (shifts16 - shifts);
@@ -551,13 +551,13 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 					}
 					if (shifts != 0 && (shifts % 16) == 0)
 					{
-						uint8_t chs = utfBufToStr(utfBuf, shifts);
+						std::uint8_t chs = utfBufToStr(utfBuf, shifts);
 
 						if (chs != 0)
 						{
 							shifts -= 16 * chs;
-							memmove(utfBuf, &utfBuf[chs], (3 - chs) * sizeof(char16_t));
-							memset(&utfBuf[3 - chs], 0, chs * sizeof(char16_t));
+							std::memmove(utfBuf, &utfBuf[chs], (3 - chs) * sizeof(char16_t));
+							std::memset(&utfBuf[3 - chs], 0, chs * sizeof(char16_t));
 							utfIdx -= chs;
 						}
 					}
@@ -575,8 +575,7 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 }
 inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 {
-	constexpr std::uint32_t range = 190, range2 = range * range, range3 = range2 * range,
-		range4 = range2 * range2, range5 = range4 * range;
+	constexpr std::uint32_t range = 190, range2 = range * range, range3 = range2 * range, range4 = range2 * range2;
 
 	std::string utf8;
 
@@ -604,7 +603,7 @@ inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 		{
 			if (ch > 0x7F)
 			{
-				utf8 += 0xC2;
+				utf8 += char(0xC2);
 			}
 			utf8 += ch;
 		}
@@ -1308,7 +1307,7 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 }
 inline std::int8_t xmlite::xml::getBOM(const char * xmlFile, std::size_t length)
 {
-	static constexpr const uint8_t BOMS[][5]
+	static constexpr const std::uint8_t BOMS[][5]
 	{
 		{ 0xFF, 0xFE, 0x00, 0x00 },
 		{ 0x00, 0x00, 0xFE, 0xFF },
@@ -1319,7 +1318,7 @@ inline std::int8_t xmlite::xml::getBOM(const char * xmlFile, std::size_t length)
 		{ 0xFE, 0xFF }
 	};
 	
-	for (uint8_t i = 0, sz = sizeof(BOMLength) / sizeof(*BOMLength); i < sz; ++i)
+	for (std::uint8_t i = 0, sz = sizeof(BOMLength) / sizeof(*BOMLength); i < sz; ++i)
 	{
 		if (length >= BOMLength[i])
 		{
