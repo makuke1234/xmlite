@@ -4,7 +4,7 @@
 ![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
 
 A light-weight single-include C++ XML library, relying on KISS (Keep It Stupid Simple)
-convention and C++11 STL (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
+principle and C++11 STL (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
 
 
 # Overview
