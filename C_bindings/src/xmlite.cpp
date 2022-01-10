@@ -51,11 +51,11 @@ char * xmlite_UTF32toUTF8Ch(char32_t utfCh)
 		return nullptr;
 	}
 }
-char * xmlite_UTF16toUTF8Ch(uint32_t utfCh)
+char * xmlite_UTFCodePointToUTF8Ch(uint32_t utfCh)
 {
 	try
 	{
-		return inner::strconv(xmlite::UTF16toUTF8(utfCh));
+		return inner::strconv(xmlite::UTFCodePointToUTF8(utfCh));
 	}
 	catch (const std::exception &)
 	{

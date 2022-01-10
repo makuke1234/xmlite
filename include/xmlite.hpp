@@ -15,7 +15,7 @@ namespace xmlite
 	inline std::string convertDOM(const char * bomStr, std::size_t length);
 
 	inline std::string UTF32toUTF8(char32_t utfCh);
-	inline std::string UTF16toUTF8(uint32_t utfCh);
+	inline std::string UTFCodePointToUTF8(uint32_t utfCh);
 
 	inline std::string UTF32toUTF8(const char32_t * utfStr, std::size_t length);
 	inline std::string UTF16toUTF8(const char16_t * utfStr, std::size_t length);
@@ -377,7 +377,7 @@ inline std::string xmlite::UTF32toUTF8(char32_t c)
 
 	return utf8;
 }
-inline std::string xmlite::UTF16toUTF8(uint32_t c)
+inline std::string xmlite::UTFCodePointToUTF8(uint32_t c)
 {
 	std::string utf8;
 
@@ -423,13 +423,13 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 		const char16_t c = *utfStr;
 		if ((c <= 0xD7FF) || (c >= 0xE000))
 		{
-			utf8 += UTF16toUTF8(c);
+			utf8 += UTFCodePointToUTF8(c);
 		}
 		else if (c >= 0xD800 && c <= 0xDFFF)
 		{
 			++utfStr;
 			const char16_t c2 = *utfStr;
-			utf8 += UTF16toUTF8((uint32_t(c - 0xD800) << 10) + uint32_t(c2 - 0xDC00) + 0x10000);
+			utf8 += UTFCodePointToUTF8((uint32_t(c - 0xD800) << 10) + uint32_t(c2 - 0xDC00) + 0x10000);
 		}
 	}
 
@@ -439,6 +439,105 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)
 {
 	xmlite::xmlnode node;
+
+	// Parsing functions
+	auto parseTag = [&node](const char *& start, const char * end, bool & ended)
+	{
+		ended = false;
+
+		const char * tagStart = NULL, * tagEnd = NULL;
+		for (; start != end; ++start)
+		{
+			if (*start == '<')
+			{
+				tagStart = start + 1;
+			}
+			else if (tagStart != NULL)
+			{
+				if (*start == '>')
+				{
+					if (*(start - 1) == '/')
+					{
+						ended = true;
+					}
+					tagEnd = start - ended;
+					break;
+				}
+			}
+		}
+
+		const char * it = tagStart;
+		for (; it != tagEnd; ++it)
+		{
+			if (*it == ' ' || *it == '\n' || *it == '\t')
+			{
+				node.m_tag = { tagStart, it - tagStart };
+				tagStart = it + 1;
+				break;
+			}
+		}
+
+		while (tagStart != tagEnd)
+		{
+			it = tagStart;
+			const char * attrStart = nullptr, * attrEnd = nullptr;
+			for (; it != tagEnd; ++it)
+			{
+				if (!(*it == ' ' || *it == '\n' || *it == '\t'))
+				{
+					// Attribute start
+					attrStart = it;
+					break;
+				}
+			}
+			for (; it != tagEnd; ++it)
+			{
+				if (*it == ' ' || *it == '\n' || *it == '\t' || *it == '=')
+				{
+					attrEnd = it;
+					break;
+				}
+			}
+			for (; it != tagEnd; ++it)
+			{
+				if (*it == '=')
+				{
+					break;
+				}
+			}
+			const char * attrValueStart = nullptr, * attrValueEnd = nullptr;
+			for (; it != tagEnd; ++it)
+			{
+				if (*it == '"')
+				{
+					++it;
+					attrValueStart = it;
+					break;
+				}
+			}
+			for (; it != tagEnd; ++it)
+			{
+				if (*it == '"')
+				{
+					attrValueEnd = it;
+					++it;
+					break;
+				}
+			}
+			tagStart = it;
+
+			if (attrStart != nullptr && attrEnd != nullptr && attrValueStart != nullptr && attrValueEnd != nullptr)
+			{
+				node.m_attributes.emplace(std::string{ attrStart, attrEnd - attrStart }, std::string{ attrValueStart, attrValueEnd - attrValueStart });
+			}
+		}
+	};
+	auto parseTagStop = [node](const char *& start, const char * end)
+	{
+
+	};
+
+
 
 	const char * start = xml, * end = xml + len;
 	for (; start != end; ++start)
