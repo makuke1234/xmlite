@@ -15,10 +15,12 @@ extern "C"
 char * xmlite_convertDOM(const char * bomStr, size_t length);
 
 char * xmlite_UTF32toUTF8Ch(char32_t utfCh);
+uint32_t xmlite_UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool * secondUsed);
 char * xmlite_UTFCodePointToUTF8Ch(uint32_t utfCh);
 
 char * xmlite_UTF32toUTF8(const char32_t * utfStr, size_t length);
 char * xmlite_UTF16toUTF8(const char16_t * utfStr, size_t length);
+char * xmlite_UTF7toUTF8(const char * utfStr, size_t length);
 
 // xmlite::xmlnode
 

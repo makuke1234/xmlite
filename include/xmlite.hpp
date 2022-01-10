@@ -15,11 +15,12 @@ namespace xmlite
 	inline std::string convertDOM(const char * bomStr, std::size_t length);
 
 	inline std::string UTF32toUTF8(char32_t utfCh);
-	inline std::string UTFCodePointToUTF8(uint32_t utfCh);
+	inline std::uint32_t UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool & secondUsed) noexcept;
+	inline std::string UTFCodePointToUTF8(std::uint32_t utfCh);
 
 	inline std::string UTF32toUTF8(const char32_t * utfStr, std::size_t length);
 	inline std::string UTF16toUTF8(const char16_t * utfStr, std::size_t length);
-	inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length);
+	inline std::string UTF7toUTF8(const char * utfStr, std::size_t length);
 
 	template<typename T, typename U = typename std::underlying_type<T>::type>
 	constexpr U underlying_cast(T enumClass) noexcept
@@ -328,6 +329,7 @@ inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
 	{
 	case xml::BOMencoding::UTF_1:
 	case xml::BOMencoding::UTF_7:
+		return xmlite::UTF7toUTF8(bomStr + bomLen, length - bomLen);
 	case xml::BOMencoding::UTF_8:
 		return { bomStr + bomLen, length - bomLen };
 	case xml::BOMencoding::UTF_16LE:
@@ -378,7 +380,24 @@ inline std::string xmlite::UTF32toUTF8(char32_t c)
 
 	return utf8;
 }
-inline std::string xmlite::UTFCodePointToUTF8(uint32_t c)
+inline std::uint32_t xmlite::UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool & secondUsed) noexcept
+{
+	if ((ch1 <= 0xD7FF) || (ch1 >= 0xE000))
+	{
+		secondUsed = false;
+		return std::uint32_t(ch1);
+	}
+	else if (ch1 >= 0xD800 && ch1 <= 0xDFFF)
+	{
+		secondUsed = true;
+		return (std::uint32_t(ch1 - 0xD800) << 10) + std::uint32_t(optCh2 - 0xDC00) + 0x10000;
+	}
+	else
+	{
+		return 0;
+	}
+}
+inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 {
 	std::string utf8;
 
@@ -421,17 +440,10 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 	std::string utf8;
 	for (const char16_t * end = utfStr + length; utfStr != end && *utfStr != u'\0'; ++utfStr)
 	{
-		const char16_t c = *utfStr;
-		if ((c <= 0xD7FF) || (c >= 0xE000))
-		{
-			utf8 += UTFCodePointToUTF8(c);
-		}
-		else if (c >= 0xD800 && c <= 0xDFFF)
-		{
-			++utfStr;
-			const char16_t c2 = *utfStr;
-			utf8 += UTFCodePointToUTF8((uint32_t(c - 0xD800) << 10) + uint32_t(c2 - 0xDC00) + 0x10000);
-		}
+		bool secondUsed;
+		const char16_t ch2 = ((utfStr + 1) != end) ? *(utfStr + 1) : 0;
+		utf8 += UTFCodePointToUTF8(UTF16toCodePoint(*utfStr, ch2, secondUsed));
+		utfStr += secondUsed;
 	}
 
 	return utf8;
@@ -439,19 +451,78 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 {
 	std::string utf8;
+
+	auto fromBase64 = [](char ch)
+	{
+		if (ch >= 'A' && ch <= 'Z')
+		{
+			return ch - 'A';
+		}
+		else if (ch >= 'a' && ch <= 'z')
+		{
+			return ch - 'a' + 26;
+		}
+		else if (ch >= '0' && ch <= '9')
+		{
+			return ch - '0' + 52;
+		}
+		else if (ch == '+')
+		{
+			return 62;
+		}
+		else if (ch == '/')
+		{
+			return 63;
+		}
+		else
+		{
+			return 0;
+		}
+	};
+
+	auto utfBufToStr = [&utf8](const char16_t * utfBuf, uint8_t shifts)
+	{
+		uint8_t chs = 0;
+		for (uint8_t i = 0, m = shifts / 16; i < m; ++i)
+		{
+			bool useAux;
+			if (i < (m - 1))
+			{
+				utf8 += UTFCodePointToUTF8(UTF16toCodePoint(utfBuf[i], utfBuf[i + 1], useAux));
+				i += useAux;
+				chs += 1 + useAux;
+			}
+			else
+			{
+				auto codePoint = UTF16toCodePoint(utfBuf[i], 0, useAux);
+				if (!useAux)
+				{
+					utf8 += UTFCodePointToUTF8(codePoint);
+					++chs;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+		return chs;
+	};
+
 	for (const char * end = utfStr + length; utfStr != end && *utfStr != '\0'; ++utfStr)
 	{
 		if (*utfStr == '+')
 		{
-			if (*(utfStr+1) == '-')
+			++utfStr;
+			if (*utfStr == '-')
 			{
 				utf8 += '+';
 			}
 			else
 			{
 				// Decode code point
-				++utfStr;
-				uint32_t codePoint = 0;
+				char16_t utfBuf[3] = { 0 };
+				uint8_t utfIdx = 0, shifts = 0;
 				for (; utfStr != end && *utfStr != '\0'; ++utfStr)
 				{
 					if (*utfStr == '-')
@@ -460,10 +531,36 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 					}
 
 					// Add code point
-					codePoint <<= 6;
-					codePoint |= *utfStr - 'A';
+					shifts += 6;
+					char16_t num = char16_t(fromBase64(*utfStr));
+					uint8_t idx = shifts / 16, shifts16 = utfIdx * 16 + 16;
+					if (utfIdx == idx)
+					{
+						utfBuf[utfIdx] |= num << (shifts16 - shifts);
+					}
+					else
+					{
+						utfBuf[utfIdx] |= num >> (shifts - shifts16);
+						++utfIdx;
+						if (shifts != shifts16)
+						{
+							utfBuf[utfIdx] |= num << (shifts16 + 16 - shifts);
+						}
+					}
+					if (shifts != 0 && (shifts % 16) == 0)
+					{
+						uint8_t chs = utfBufToStr(utfBuf, shifts);
+
+						if (chs != 0)
+						{
+							shifts -= 16 * chs;
+							memmove(utfBuf, &utfBuf[chs], (3 - chs) * sizeof(char16_t));
+							memset(&utfBuf[3 - chs], 0, chs * sizeof(char16_t));
+							utfIdx -= chs;
+						}
+					}
 				}
-				utf8 += UTFCodePointToUTF8(codePoint);
+				utfBufToStr(utfBuf, shifts);
 			}
 		}
 		else
@@ -477,6 +574,8 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)
 {
+	return {};
+
 	xmlite::xmlnode node;
 
 	// Parsing functions
@@ -510,7 +609,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 		{
 			if (*it == ' ' || *it == '\n' || *it == '\t')
 			{
-				node.m_tag = { tagStart, it - tagStart };
+				node.m_tag = { tagStart, std::size_t(it - tagStart) };
 				tagStart = it + 1;
 				break;
 			}
@@ -567,7 +666,10 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 
 			if (attrStart != nullptr && attrEnd != nullptr && attrValueStart != nullptr && attrValueEnd != nullptr)
 			{
-				node.m_attributes.emplace(std::string{ attrStart, attrEnd - attrStart }, std::string{ attrValueStart, attrValueEnd - attrValueStart });
+				node.m_attributes.emplace(
+					std::string{ attrStart, std::size_t(attrEnd - attrStart) },
+					std::string{ attrValueStart, std::size_t(attrValueEnd - attrValueStart) }
+				);
 			}
 		}
 	};
@@ -582,9 +684,11 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 	for (; start != end; ++start)
 	{
 		// if found tag, add it to key
-		if (strncmp(start, "<", 1) == 0)
+		bool ended;
+		parseTag(start, end, ended);
+		if (ended == false)
 		{
-			break;
+			parseTagStop(start, end);
 		}
 	}
 

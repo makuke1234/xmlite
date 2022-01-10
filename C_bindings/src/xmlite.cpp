@@ -51,6 +51,10 @@ char * xmlite_UTF32toUTF8Ch(char32_t utfCh)
 		return nullptr;
 	}
 }
+uint32_t xmlite_UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool * secondUsed)
+{
+	return xmlite::UTF16toCodePoint(ch1, optCh2, *secondUsed);
+}
 char * xmlite_UTFCodePointToUTF8Ch(uint32_t utfCh)
 {
 	try
@@ -79,6 +83,17 @@ char * xmlite_UTF16toUTF8(const char16_t * utfStr, size_t length)
 	try
 	{
 		return inner::strconv(xmlite::UTF16toUTF8(utfStr, length));
+	}
+	catch (const std::exception &)
+	{
+		return nullptr;
+	}
+}
+char * xmlite_UTF7toUTF8(const char * utfStr, size_t length)
+{
+	try
+	{
+		return inner::strconv(xmlite::UTF7toUTF8(utfStr, length));
 	}
 	catch (const std::exception &)
 	{
