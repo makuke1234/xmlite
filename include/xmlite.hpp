@@ -574,8 +574,6 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)
 {
-	return {};
-
 	xmlite::xmlnode node;
 
 	// Parsing functions
@@ -583,14 +581,14 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 	{
 		ended = false;
 
-		const char * tagStart = NULL, * tagEnd = NULL;
+		const char * tagStart = nullptr, * tagEnd = nullptr;
 		for (; start != end; ++start)
 		{
 			if (*start == '<')
 			{
 				tagStart = start + 1;
 			}
-			else if (tagStart != NULL)
+			else if (tagStart != nullptr)
 			{
 				if (*start == '>')
 				{
@@ -603,16 +601,30 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 				}
 			}
 		}
+		if (tagStart == nullptr || tagEnd == nullptr)
+		{
+			return;
+		}
 
-		const char * it = tagStart;
+		const char * it = tagStart + 1, * tagRealEnd = nullptr;
 		for (; it != tagEnd; ++it)
 		{
 			if (*it == ' ' || *it == '\n' || *it == '\t')
 			{
-				node.m_tag = { tagStart, std::size_t(it - tagStart) };
-				tagStart = it + 1;
+				tagRealEnd = it;
 				break;
 			}
+		}
+
+		if (tagRealEnd != nullptr)
+		{
+			node.m_tag = { tagStart, std::size_t(tagRealEnd - tagStart) };
+			tagStart = tagRealEnd + 1;
+		}
+		else
+		{
+			node.m_tag = { tagStart, std::size_t(tagEnd - tagStart) };
+			return;
 		}
 
 		while (tagStart != tagEnd)
@@ -673,15 +685,29 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			}
 		}
 	};
-	auto parseTagStop = [node](const char *& start, const char * end)
+	auto parseTagStop = [](const char *& start, const char * end)
 	{
-
+		for (; start != end; ++start)
+		{
+			if (strncmp(start, "</", 2) == 0)
+			{
+				start += 2;
+				break;
+			}
+		}
+		for (; start != end; ++start)
+		{
+			if (*start == '>')
+			{
+				break;
+			}
+		}
 	};
 
 
 
 	const char * start = xml, * end = xml + len;
-	for (; start != end; ++start)
+	for (; start != end;)
 	{
 		// if found tag, add it to key
 		bool ended;
