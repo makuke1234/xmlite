@@ -575,7 +575,102 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 }
 inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 {
-	return { utfStr, length };
+	constexpr std::uint32_t range = 190, range2 = range * range, range3 = range2 * range,
+		range4 = range2 * range2, range5 = range4 * range;
+
+	std::string utf8;
+
+	auto toUTF1Range = [](std::uint8_t ch) -> std::uint8_t
+	{
+		if (ch > 0x20 && ch < 0x7F)
+		{
+			return ch - 0x21;
+		}
+		else if (ch > 0x9F)
+		{
+			return ch - 0xA0 + 0x5E;
+		}
+		else
+		{
+			return 0;
+		}
+	};
+
+	for (const char * end = utfStr + length; utfStr != end && *utfStr != '\0'; ++utfStr)
+	{
+		std::uint8_t ch = *utfStr;
+		// UTF-1 length of 1
+		if (ch <= 0x9F)
+		{
+			if (ch > 0x7F)
+			{
+				utf8 += 0xC2;
+			}
+			utf8 += ch;
+		}
+		// Other lengths
+		else
+		{
+			std::uint32_t codePoint = 0;
+			// Length of 2
+			if (ch <= 0xF5)
+			{
+				if (utfStr + 1 == end)
+				{
+					break;
+				}
+				++utfStr;
+				const std::uint8_t ch2 = *utfStr;
+				
+				if (ch == 0xA0)
+				{
+					utf8 += 0xC2 + (ch2 > 0xBF);
+					utf8 += ch2  - (ch2 > 0xBF) * 0x40;
+					continue;
+				}
+				else
+				{
+					codePoint = std::uint32_t(ch - 0xA1) * range + std::uint32_t(toUTF1Range(ch2)) + 0x0100;
+				}
+			}
+			// Length of 3
+			else if (ch <= 0xFB)
+			{
+				if (utfStr + 2 == end)
+				{
+					break;
+				}
+				++utfStr;
+				const std::uint8_t ch2 = *utfStr;
+				++utfStr;
+				const std::uint8_t ch3 = *utfStr;
+
+				codePoint = std::uint32_t(ch - 0xF6) * range2 + toUTF1Range(ch2) * range + toUTF1Range(ch3) + 0x4016;
+			}
+			// Length of 5
+			else if (ch <= 0xFD)
+			{
+				if (utfStr + 4 == end)
+				{
+					break;
+				}
+				++utfStr;
+				const std::uint8_t ch2 = *utfStr;
+				++utfStr;
+				const std::uint8_t ch3 = *utfStr;
+				++utfStr;
+				const std::uint8_t ch4 = *utfStr;
+				++utfStr;
+				const std::uint8_t ch5 = *utfStr;
+
+				codePoint = std::uint32_t(ch - 0xFC) * range4 + toUTF1Range(ch2) * range3 +
+					toUTF1Range(ch3) * range2 + toUTF1Range(ch4) * range + toUTF1Range(ch5) + 0x038E2E;
+			}
+			utf8 += UTFCodePointToUTF8(codePoint);
+		}
+	}
+
+	return utf8;
 }
 
 inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t len)
