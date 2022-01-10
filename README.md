@@ -32,4 +32,4 @@ Yet again bindings for C are planned like with my other jsonlite library.
 
 # Licensing
 
-This project is uses the MIT license.
+This project uses the MIT license.
