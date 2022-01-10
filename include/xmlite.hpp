@@ -111,14 +111,17 @@ namespace xmlite
 		template<typename T>
 		using Vec = std::vector<T>;
 
+		using IdxVec = Vec<std::size_t>;
+
 		using AttrMap = HashMap<String, String>;
-		using IdxMap = HashMap<String, Vec<std::size_t>>;
+		using ValueVec = Vec<xmlnode>;
+		using IdxMap = HashMap<String, IdxVec>;
 
 	private:
 		String m_tag;
 		AttrMap m_attributes;
 
-		Vec<xmlnode> m_values;
+		ValueVec m_values;
 		IdxMap m_idxMap;
 
 		enum class objtype : std::uint8_t
@@ -131,6 +134,28 @@ namespace xmlite
 
 		static inline xmlnode innerParse(const char * xml, std::size_t len);
 		inline std::string innerDump(std::size_t depth) const;
+		
+		void buildIdxMap() noexcept
+		{
+			try
+			{
+				for (auto & i : this->m_idxMap)
+				{
+					if (!i.second.empty())
+					{
+						i.second.clear();
+					}
+				}
+				for (std::size_t i = 0, sz = this->m_values.size(); i < sz; ++i)
+				{
+					this->m_idxMap.at(this->m_values[i].m_tag).push_back(i);
+				}
+			}
+			catch (const std::exception &)
+			{
+				// Do nothing
+			}
+		}
 
 	public:
 
@@ -156,7 +181,73 @@ namespace xmlite
 			return this->innerDump(0);
 		}
 
+		String & tag()
+		{
+			return this->m_tag;
+		}
+		const String & tag() const noexcept
+		{
+			return this->m_tag;
+		}
+		explicit operator String & ()
+		{
+			return this->m_tag;
+		}
+		explicit operator const String & () const noexcept
+		{
+			return this->m_tag;
+		}
 
+		AttrMap & attr()
+		{
+			return this->m_attributes;
+		}
+		const AttrMap & attr() const noexcept
+		{
+			return this->m_attributes;
+		}
+		explicit operator AttrMap & ()
+		{
+			return this->m_attributes;
+		}
+		explicit operator const AttrMap & () const noexcept
+		{
+			return this->m_attributes;
+		}
+
+		const IdxVec & operator[](const std::string & str) const
+		{
+			return this->m_idxMap.at(str);
+		}
+		const xmlnode & operator[](std::size_t idx) const
+		{
+			return this->m_values[idx];
+		}
+
+		void add(const std::string & value)
+		{
+			auto idx = this->m_values.size();
+			this->m_values.emplace_back();
+			auto & obj = this->m_values.back();
+			obj.m_tag = value;
+			obj.m_role = objtype::EndPoint;
+			this->m_role = objtype::Object;
+			this->m_idxMap[value].push_back(idx);
+		}
+		void add(const std::string & key, std::string & value)
+		{
+			auto idx = this->m_values.size();
+			this->m_values.emplace_back();
+			this->m_values.back().m_tag = key;
+			this->m_values.back().add(value);
+			this->m_idxMap[key].push_back(idx);
+		}
+		void remove(std::size_t idx)
+		{
+			this->m_idxMap.at(this->m_values[idx].m_tag).pop_back();
+			this->m_values.erase(this->m_values.begin() + idx);
+			this->buildIdxMap();
+		}
 
 	};
 
