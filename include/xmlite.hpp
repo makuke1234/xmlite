@@ -181,7 +181,7 @@ namespace xmlite
 			return this->innerDump(0);
 		}
 
-		String & tag()
+		String & tag() noexcept
 		{
 			return this->m_tag;
 		}
@@ -189,7 +189,7 @@ namespace xmlite
 		{
 			return this->m_tag;
 		}
-		explicit operator String & ()
+		explicit operator String & () noexcept
 		{
 			return this->m_tag;
 		}
@@ -198,7 +198,7 @@ namespace xmlite
 			return this->m_tag;
 		}
 
-		AttrMap & attr()
+		AttrMap & attr() noexcept
 		{
 			return this->m_attributes;
 		}
@@ -206,7 +206,7 @@ namespace xmlite
 		{
 			return this->m_attributes;
 		}
-		explicit operator AttrMap & ()
+		explicit operator AttrMap & () noexcept
 		{
 			return this->m_attributes;
 		}
@@ -215,11 +215,28 @@ namespace xmlite
 			return this->m_attributes;
 		}
 
-		const IdxVec & operator[](const std::string & str) const
+		const IdxVec & at(const std::string & str) const
 		{
 			return this->m_idxMap.at(str);
 		}
-		const xmlnode & operator[](std::size_t idx) const
+		const xmlnode & at(std::size_t idx) const
+		{
+			return this->m_values.at(idx);
+		}
+		const IdxVec & operator[](const std::string & str)
+		{
+			auto & item = this->m_idxMap[str];
+			if (item.empty())
+			{
+				this->add(str);
+			}
+			return this->m_idxMap.at(str);
+		}
+		xmlnode & operator[](std::size_t idx) noexcept
+		{
+			return this->m_values[idx];
+		}
+		const xmlnode & operator[](std::size_t idx) const noexcept
 		{
 			return this->m_values[idx];
 		}
@@ -242,11 +259,19 @@ namespace xmlite
 			this->m_values.back().add(value);
 			this->m_idxMap[key].push_back(idx);
 		}
-		void remove(std::size_t idx)
+		bool remove(std::size_t idx) noexcept
 		{
-			this->m_idxMap.at(this->m_values[idx].m_tag).pop_back();
-			this->m_values.erase(this->m_values.begin() + idx);
-			this->buildIdxMap();
+			try
+			{
+				this->m_idxMap.at(this->m_values[idx].m_tag).pop_back();
+				this->m_values.erase(this->m_values.begin() + idx);
+				this->buildIdxMap();
+				return true;
+			}
+			catch (const std::exception & e)
+			{
+				return false;
+			}
 		}
 
 	};
