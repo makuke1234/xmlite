@@ -42,11 +42,14 @@ typedef struct xmlite_xmlnode_ref
 xmlite_xmlnode_t xmlite_xmlnode_make(const char * xmlFile, size_t length);
 xmlite_xmlnode_t xmlite_xmlnode_makeNullTerm(const char * xmlFile);
 
-xmlite_xmlnode_t xmlite_xmlnode_copy(xmlite_xmlnode_t other);
+xmlite_xmlnode_t xmlite_xmlnode_copy(xmlite_xmlnode_t * other);
 
 char * xmlite_xmlnode_dump(xmlite_xmlnode_t * obj);
 
 void xmlite_xmlnode_free(xmlite_xmlnode_t * obj);
+
+const char * xmlite_xmlnode_tagGet(xmlite_xmlnode_t * obj);
+void xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length);
 
 // xmlite::xml
 
@@ -64,9 +67,9 @@ extern const char * const * xmlite_xml_s_BOMStrings;
 xmlite_xml_t xmlite_xml_make(const char * xmlFile, size_t length);
 xmlite_xml_t xmlite_xml_makeNullTerm(const char * xmlFile);
 
-xmlite_xml_t xmlite_xml_copy(xmlite_xml_t obj);
+xmlite_xml_t xmlite_xml_copy(xmlite_xml_t * obj);
 
-xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t obj);
+xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t * obj);
 
 char * xmlite_xml_getVersion(xmlite_xml_t * obj);
 char * xmlite_xml_getEncoding(xmlite_xml_t * obj);

@@ -137,9 +137,9 @@ xmlite_xmlnode_t xmlite_xmlnode_makeNullTerm(const char * xmlFile)
 	}
 }
 
-xmlite_xmlnode_t xmlite_xmlnode_copy(xmlite_xmlnode_t other)
+xmlite_xmlnode_t xmlite_xmlnode_copy(xmlite_xmlnode_t * other)
 {
-	return { new xmlite::xmlnode(*static_cast<xmlite::xmlnode *>(other.xmlite_xmlnode_mem)), nullptr };
+	return { new xmlite::xmlnode(*static_cast<xmlite::xmlnode *>(other->xmlite_xmlnode_mem)), nullptr };
 }
 
 char * xmlite_xmlnode_dump(xmlite_xmlnode_t * obj)
@@ -167,6 +167,15 @@ void xmlite_xmlnode_free(xmlite_xmlnode_t * obj)
 		std::free(obj->xmlite_exceptioncode);
 		obj->xmlite_exceptioncode = nullptr;
 	}
+}
+
+const char * xmlite_xmlnode_tagGet(xmlite_xmlnode_t * obj)
+{
+	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->tag().c_str();
+}
+void xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length)
+{
+	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->tag() = { tag, length };
 }
 
 
@@ -200,14 +209,14 @@ xmlite_xml_t xmlite_xml_makeNullTerm(const char * xmlFile)
 	}
 }
 
-xmlite_xml_t xmlite_xml_copy(xmlite_xml_t obj)
+xmlite_xml_t xmlite_xml_copy(xmlite_xml_t * obj)
 {
-	return { new xmlite::xml(*static_cast<xmlite::xml *>(obj.xmlite_xml_mem)), nullptr };
+	return { new xmlite::xml(*static_cast<xmlite::xml *>(obj->xmlite_xml_mem)), nullptr };
 }
 
-xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t obj)
+xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t * obj)
 {
-	return { &static_cast<xmlite::xml *>(obj.xmlite_xml_mem)->get(), nullptr };
+	return { &static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->get(), nullptr };
 }
 
 char * xmlite_xml_getVersion(xmlite_xml_t * obj)
