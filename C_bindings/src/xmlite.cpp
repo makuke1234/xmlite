@@ -6,7 +6,7 @@
 
 namespace inner
 {
-	char * strndup(const char * str, size_t len)
+	char * strndup(const char * str, size_t len) noexcept
 	{
 		auto mem = static_cast<char *>(std::malloc((len + 1) * sizeof(char)));
 		if (mem == nullptr)
@@ -20,12 +20,12 @@ namespace inner
 		return mem;
 	}
 
-	char * strconv(const std::string & str)
+	char * strconv(const std::string & str) noexcept
 	{
 		return inner::strndup(str.c_str(), str.length());
 	}
 
-	static xmlite::exception s_lastException;
+	static std::exception s_lastException;
 }
 
 // Free-standing xmlite:: functions
@@ -42,8 +42,9 @@ char * xmlite_convertDOM(const char * bomStr, size_t length)
 	{
 		return inner::strconv(xmlite::convertDOM(bomStr, length));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -54,8 +55,9 @@ char * xmlite_UTF32toUTF8Ch(char32_t utfCh)
 	{
 		return inner::strconv(xmlite::UTF32toUTF8(utfCh));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -69,8 +71,9 @@ char * xmlite_UTFCodePointToUTF8Ch(uint32_t utfCh)
 	{
 		return inner::strconv(xmlite::UTFCodePointToUTF8(utfCh));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -81,8 +84,9 @@ char * xmlite_UTF32toUTF8(const char32_t * utfStr, size_t length)
 	{
 		return inner::strconv(xmlite::UTF32toUTF8(utfStr, length));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -92,8 +96,9 @@ char * xmlite_UTF16toUTF8(const char16_t * utfStr, size_t length)
 	{
 		return inner::strconv(xmlite::UTF16toUTF8(utfStr, length));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -103,8 +108,9 @@ char * xmlite_UTF7toUTF8(const char * utfStr, size_t length)
 	{
 		return inner::strconv(xmlite::UTF7toUTF8(utfStr, length));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -114,8 +120,9 @@ char * xmlite_UTF1toUTF8(const char * utfStr, size_t length)
 	{
 		return inner::strconv(xmlite::UTF1toUTF8(utfStr, length));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -126,77 +133,108 @@ xmlite_xmlnode_t xmlite_xmlnode_make(const char * xmlFile, size_t length)
 {
 	try
 	{
-		return { new xmlite::xmlnode(xmlFile, length), nullptr };
+		return { new xmlite::xmlnode(xmlFile, length) };
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		return { nullptr, strdup(e.what()) };
+		inner::s_lastException = std::move(e);
+		return { nullptr };
 	}
 }
 xmlite_xmlnode_t xmlite_xmlnode_makeNullTerm(const char * xmlFile)
 {
 	try
 	{
-		return { new xmlite::xmlnode(xmlFile), nullptr };
+		return { new xmlite::xmlnode(xmlFile) };
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		return { nullptr, strdup(e.what()) };
+		inner::s_lastException = std::move(e);
+		return { nullptr };
 	}
 }
 
 xmlite_xmlnode_t xmlite_xmlnode_copy(xmlite_xmlnode_t * other)
 {
-	return { new xmlite::xmlnode(*static_cast<xmlite::xmlnode *>(other->xmlite_xmlnode_mem)), nullptr };
+	try
+	{
+		return { new xmlite::xmlnode(*static_cast<xmlite::xmlnode *>(other->mem)) };
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return { nullptr };
+	}
 }
 
 char * xmlite_xmlnode_dump(xmlite_xmlnode_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->dump());
+		return inner::strconv(static_cast<xmlite::xmlnode *>(obj->mem)->dump());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_xmlnode_mem = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
 
 void xmlite_xmlnode_free(xmlite_xmlnode_t * obj)
 {
-	if (obj->xmlite_xmlnode_mem != nullptr)
+	if (obj->mem != nullptr)
 	{
-		delete static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem);
-		obj->xmlite_xmlnode_mem = nullptr;
-	}
-	if (obj->xmlite_exceptioncode != nullptr)
-	{
-		std::free(obj->xmlite_exceptioncode);
-		obj->xmlite_exceptioncode = nullptr;
+		delete static_cast<xmlite::xmlnode *>(obj->mem);
+		obj->mem = nullptr;
 	}
 }
 
 const char * xmlite_xmlnode_tagGet(xmlite_xmlnode_t * obj)
 {
-	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->tag().c_str();
+	return static_cast<xmlite::xmlnode *>(obj->mem)->tag().c_str();
 }
-void xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length)
+bool xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length)
 {
-	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->tag() = { tag, length };
+	try
+	{
+		static_cast<xmlite::xmlnode *>(obj->mem)->tag() = { tag, length };
+		return true;
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
 }
 
 const char * xmlite_xmlnode_attrGet(xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
 {
-	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr().at({ key, keyLen }).c_str();
+	try
+	{
+		return static_cast<xmlite::xmlnode *>(obj->mem)->attr().at({ key, keyLen }).c_str();
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return nullptr;
+	}
 }
-void xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * attr, size_t attrLen)
+bool xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * attr, size_t attrLen)
 {
-	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr()[{ key, keyLen }] = { attr, attrLen };
+	try
+	{
+		static_cast<xmlite::xmlnode *>(obj->mem)->attr()[{ key, keyLen }] = { attr, attrLen };
+		return true;
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
 }
 bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
 {
-	auto & attr = static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr();
+	auto & attr = static_cast<xmlite::xmlnode *>(obj->mem)->attr();
 	auto it = attr.find({ key, keyLen });
 	if (it != attr.end())
 	{
@@ -211,29 +249,71 @@ bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t 
 
 xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(xmlite_xmlnode_t * obj, const char * str, size_t length)
 {
-	const auto & vec = static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->at({ str, length });
-	return { vec.data(), vec.size() };
+	try
+	{
+		const auto & vec = static_cast<xmlite::xmlnode *>(obj->mem)->at({ str, length });
+		return { vec.data(), vec.size() };
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return { nullptr, 0 };
+	}
 }
 xmlite_xmlnode_constref_t xmlite_xmlnode_atNum(xmlite_xmlnode_t * obj, size_t idx)
 {
-	return { &static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->at(idx) };
+	try
+	{
+		return { &static_cast<xmlite::xmlnode *>(obj->mem)->at(idx) };
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return { nullptr };
+	}
 }
 xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx)
 {
-	return { &static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->operator[](idx), nullptr };
+	try
+	{
+		return { &static_cast<xmlite::xmlnode *>(obj->mem)->operator[](idx) };
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return { nullptr };
+	}
 }
 
-void xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen)
+bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen)
 {
-	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->add({ val, valLen });
+	try
+	{
+		static_cast<xmlite::xmlnode *>(obj->mem)->add({ val, valLen });
+		return true;
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
 }
-void xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen)
+bool xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen)
 {
-	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->add({ key, keyLen }, { val, valLen });
+	try
+	{
+		static_cast<xmlite::xmlnode *>(obj->mem)->add({ key, keyLen }, { val, valLen });
+		return true;
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
 }
 bool xmlite_xmlnode_remove(xmlite_xmlnode_t * obj, size_t idx)
 {
-	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->remove(idx);
+	return static_cast<xmlite::xmlnode *>(obj->mem)->remove(idx);
 }
 
 
@@ -248,44 +328,54 @@ xmlite_xml_t xmlite_xml_make(const char * xmlFile, size_t length)
 {
 	try
 	{
-		return { new xmlite::xml(xmlFile, length), nullptr };
+		return { new xmlite::xml(xmlFile, length) };
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		return { nullptr, strdup(e.what()) };
+		inner::s_lastException = std::move(e);
+		return { nullptr };
 	}
 }
 xmlite_xml_t xmlite_xml_makeNullTerm(const char * xmlFile)
 {
 	try
 	{
-		return { new xmlite::xml(xmlFile), nullptr };
+		return { new xmlite::xml(xmlFile) };
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		return { nullptr, strdup(e.what()) };
+		inner::s_lastException = std::move(e);
+		return { nullptr };
 	}
 }
 
 xmlite_xml_t xmlite_xml_copy(xmlite_xml_t * obj)
 {
-	return { new xmlite::xml(*static_cast<xmlite::xml *>(obj->xmlite_xml_mem)), nullptr };
+	try
+	{
+		return { new xmlite::xml(*static_cast<xmlite::xml *>(obj->mem)) };
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return { nullptr };
+	}
 }
 
 xmlite_xmlnode_ref_t xmlite_xml_get(xmlite_xml_t * obj)
 {
-	return { &static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->get(), nullptr };
+	return { &static_cast<xmlite::xml *>(obj->mem)->get() };
 }
 
 char * xmlite_xml_getVersion(xmlite_xml_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->getVersion());
+		return inner::strconv(static_cast<xmlite::xml *>(obj->mem)->getVersion());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_exceptioncode = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -293,11 +383,11 @@ char * xmlite_xml_getEncoding(xmlite_xml_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->getEncoding());
+		return inner::strconv(static_cast<xmlite::xml *>(obj->mem)->getEncoding());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_exceptioncode = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -305,11 +395,11 @@ char * xmlite_xml_getStandalone(xmlite_xml_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->getStandalone());
+		return inner::strconv(static_cast<xmlite::xml *>(obj->mem)->getStandalone());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_exceptioncode = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -320,8 +410,9 @@ uint8_t xmlite_xml_s_getVersion(const char * xmlFile, size_t length, bool * init
 	{
 		return xmlite::underlying_cast(xmlite::xml::getVersion(xmlFile, length, *init));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return 0;
 	}
 }
@@ -331,8 +422,9 @@ char * xmlite_xml_s_getEncoding(const char * xmlFile, size_t length, bool * init
 	{
 		return inner::strconv(xmlite::xml::getEncoding(xmlFile, length, *init));
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -342,8 +434,9 @@ bool xmlite_xml_s_getStandalone(const char * xmlFile, size_t length, bool * init
 	{
 		return xmlite::xml::getStandalone(xmlFile, length, *init);
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return false;
 	}
 }
@@ -353,8 +446,9 @@ int8_t xmlite_xml_s_getBOM(const char * xmlFile, size_t length)
 	{
 		return xmlite::xml::getBOM(xmlFile, length);
 	}
-	catch (const std::exception &)
+	catch (std::exception & e)
 	{
+		inner::s_lastException = std::move(e);
 		return -1;
 	}
 }
@@ -363,11 +457,11 @@ char * xmlite_xml_dumpHeader(xmlite_xml_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->dumpHeader());
+		return inner::strconv(static_cast<xmlite::xml *>(obj->mem)->dumpHeader());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_exceptioncode = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
@@ -375,25 +469,21 @@ char * xmlite_xml_dump(xmlite_xml_t * obj)
 {
 	try
 	{
-		return inner::strconv(static_cast<xmlite::xml *>(obj->xmlite_xml_mem)->dump());
+		return inner::strconv(static_cast<xmlite::xml *>(obj->mem)->dump());
 	}
-	catch (const xmlite::exception & e)
+	catch (std::exception & e)
 	{
-		obj->xmlite_exceptioncode = strdup(e.what());
+		inner::s_lastException = std::move(e);
 		return nullptr;
 	}
 }
 
 void xmlite_xml_free(xmlite_xml_t * obj)
 {
-	if (obj->xmlite_xml_mem != nullptr)
+	if (obj->mem != nullptr)
 	{
-		delete static_cast<xmlite::xml *>(obj->xmlite_xml_mem);
-		obj->xmlite_xml_mem = nullptr;
-	}
-	if (obj->xmlite_exceptioncode != nullptr)
-	{
-		std::free(obj->xmlite_exceptioncode);
-		obj->xmlite_exceptioncode = nullptr;
+		delete static_cast<xmlite::xml *>(obj->mem);
+		obj->mem = nullptr;
 	}
 }
+
