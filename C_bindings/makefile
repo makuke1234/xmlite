@@ -1,3 +1,4 @@
+SHELL=cmd
 CC=gcc -std=c99 -Wall -Wextra -Wpedantic
 CXX=g++ -std=c++11 -Wall -Wextra -Wpedantic
 
@@ -20,3 +21,7 @@ debug: $(SRC)/xmlite.cpp $(BIN)
 release: $(SRC)/xmlite.cpp $(BIN)
 	$(CXX) -c $< -o $(BIN)/$(TARGET).o $(CFLAGS)
 	ar rcs $(BIN)/lib$(TARGET).a $(BIN)/$(TARGET).o
+
+clean:
+	del $(BIN)\*.o
+	del $(BIN)\*.a
