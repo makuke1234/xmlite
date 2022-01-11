@@ -251,7 +251,7 @@ namespace xmlite
 			this->m_role = objtype::Object;
 			this->m_idxMap[value].push_back(idx);
 		}
-		void add(const std::string & key, std::string & value)
+		void add(const std::string & key, const std::string & value)
 		{
 			auto idx = this->m_values.size();
 			this->m_values.emplace_back();
