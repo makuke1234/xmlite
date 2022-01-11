@@ -57,7 +57,7 @@ namespace xmlite
 			enum_size
 		};
 
-		Type m_type{ Type::Unknown };
+		Type m_type;
 		std::string m_optMsg;
 		static constexpr const char * exceptionMessages[underlying_cast(Type::enum_size)]
 		{
@@ -76,7 +76,7 @@ namespace xmlite
 			"2 dashes found in the middle of comment!"
 		};
 	public:
-		explicit exception(Type type) noexcept
+		explicit exception(Type type = Type::Unknown) noexcept
 			: m_type(type)
 		{
 		}

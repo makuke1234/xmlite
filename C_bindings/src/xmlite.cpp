@@ -24,9 +24,17 @@ namespace inner
 	{
 		return inner::strndup(str.c_str(), str.length());
 	}
+
+	static xmlite::exception s_lastException;
 }
 
 // Free-standing xmlite:: functions
+
+
+const char * xmlite_lastErr()
+{
+	return inner::s_lastException.what();
+}
 
 char * xmlite_convertDOM(const char * bomStr, size_t length)
 {
@@ -176,6 +184,56 @@ const char * xmlite_xmlnode_tagGet(xmlite_xmlnode_t * obj)
 void xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length)
 {
 	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->tag() = { tag, length };
+}
+
+const char * xmlite_xmlnode_attrGet(xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
+{
+	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr().at({ key, keyLen }).c_str();
+}
+void xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * attr, size_t attrLen)
+{
+	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr()[{ key, keyLen }] = { attr, attrLen };
+}
+bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
+{
+	auto & attr = static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->attr();
+	auto it = attr.find({ key, keyLen });
+	if (it != attr.end())
+	{
+		attr.erase(it);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(xmlite_xmlnode_t * obj, const char * str, size_t length)
+{
+	const auto & vec = static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->at({ str, length });
+	return { vec.data(), vec.size() };
+}
+xmlite_xmlnode_constref_t xmlite_xmlnode_atNum(xmlite_xmlnode_t * obj, size_t idx)
+{
+	return { &static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->at(idx) };
+}
+xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx)
+{
+	return { &static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->operator[](idx), nullptr };
+}
+
+void xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen)
+{
+	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->add({ val, valLen });
+}
+void xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen)
+{
+	static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->add({ key, keyLen }, { val, valLen });
+}
+bool xmlite_xmlnode_remove(xmlite_xmlnode_t * obj, size_t idx)
+{
+	return static_cast<xmlite::xmlnode *>(obj->xmlite_xmlnode_mem)->remove(idx);
 }
 
 

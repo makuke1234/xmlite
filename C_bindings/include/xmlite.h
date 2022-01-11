@@ -12,6 +12,8 @@ extern "C"
 
 // Free-standing xmlite:: functions
 
+const char * xmlite_lastErr();
+
 char * xmlite_convertDOM(const char * bomStr, size_t length);
 
 char * xmlite_UTF32toUTF8Ch(char32_t utfCh);
@@ -38,6 +40,16 @@ typedef struct xmlite_xmlnode_ref
 
 } xmlite_xmlnode_ref_t;
 
+typedef struct xmlite_xmlnode_constref
+{
+	union
+	{
+		const void * mem;
+		const xmlite_xmlnode_t base;
+	};
+
+} xmlite_xmlnode_constref_t;
+
 
 xmlite_xmlnode_t xmlite_xmlnode_make(const char * xmlFile, size_t length);
 xmlite_xmlnode_t xmlite_xmlnode_makeNullTerm(const char * xmlFile);
@@ -50,6 +62,29 @@ void xmlite_xmlnode_free(xmlite_xmlnode_t * obj);
 
 const char * xmlite_xmlnode_tagGet(xmlite_xmlnode_t * obj);
 void xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length);
+
+
+const char * xmlite_xmlnode_attrGet(xmlite_xmlnode_t * obj, const char * key, size_t keyLen);
+void xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * attr, size_t attrLen);
+bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t keyLen);
+
+
+typedef struct xmlite_xmlnode_IdxVec
+{
+	const size_t * data;
+	size_t size;
+
+} xmlite_xmlnode_IdxVec_t;
+
+xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(xmlite_xmlnode_t * obj, const char * str, size_t length);
+xmlite_xmlnode_constref_t xmlite_xmlnode_atNum(xmlite_xmlnode_t * obj, size_t idx);
+xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx);
+
+void xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen);
+void xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen);
+bool xmlite_xmlnode_remove(xmlite_xmlnode_t * obj, size_t idx);
+
+
 
 // xmlite::xml
 
