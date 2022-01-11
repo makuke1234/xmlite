@@ -86,7 +86,7 @@ namespace xmlite
 		{
 		}
 
-		const char * what() const throw() override
+		virtual const char * what() const throw() override
 		{
 			if (this->m_optMsg.empty())
 			{
