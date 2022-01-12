@@ -259,6 +259,12 @@ namespace xmlite
 			this->m_values.back().add(value);
 			this->m_idxMap[key].push_back(idx);
 		}
+		void add(const xmlnode & other)
+		{
+			auto idx = this->m_values.size();
+			this->m_values.emplace_back(other);
+			this->m_idxMap[this->m_values.back().m_tag].push_back(idx);
+		}
 		bool remove(std::size_t idx) noexcept
 		{
 			try
@@ -835,7 +841,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			return;
 		}
 
-		const char * it = tagStart + 1, * tagRealEnd = nullptr;
+		const char * it = tagStart + 1, * tagRealEnd = tagEnd;
 		for (; it != tagEnd; ++it)
 		{
 			if (*it == ' ' || *it == '\n' || *it == '\t')
@@ -845,17 +851,15 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			}
 		}
 
-		if (tagRealEnd != nullptr)
+		node.m_tag = { tagStart, std::size_t(tagRealEnd - tagStart) };
+		
+		if (tagRealEnd == tagEnd)
 		{
-			node.m_tag = { tagStart, std::size_t(tagRealEnd - tagStart) };
-			tagStart = tagRealEnd + 1;
-		}
-		else
-		{
-			node.m_tag = { tagStart, std::size_t(tagEnd - tagStart) };
 			return;
 		}
 
+
+		tagStart = tagRealEnd + 1;
 		while (tagStart != tagEnd)
 		{
 			it = tagStart;
@@ -914,22 +918,116 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			}
 		}
 	};
-	auto parseTagStop = [](const char *& start, const char * end)
+	auto parseTagStop = [](const char * it, const char * end) -> const char *
 	{
-		for (; start != end; ++start)
+		// Find tag and its ending, return end of ending
+		const char * tagStart = nullptr, * tagEnd = nullptr;
+		bool ended = false;
+		for (; it != end; ++it)
 		{
-			if (strncmp(start, "</", 2) == 0)
+			if (*it == '<')
 			{
-				start += 2;
+				tagStart = it + 1;
+			}
+			else if (tagStart != nullptr)
+			{
+				if (*it == '>')
+				{
+					if (*(it - 1) == '/')
+					{
+						ended = true;
+					}
+					tagEnd = it - ended;
+					break;
+				}
+			}
+		}
+		if (tagStart == nullptr || tagEnd == nullptr)
+		{
+			return nullptr;
+		}
+
+		it = tagStart + 1;
+		const char * tagRealEnd = tagEnd;
+		for (; it != tagEnd; ++it)
+		{
+			if (*it == ' ' || *it == '\n' || *it == '\t')
+			{
+				tagRealEnd = it;
 				break;
 			}
 		}
+
+		if (ended == true)
+		{
+			return tagEnd;
+		}
+
+		// Find end
+		for (; it != end; ++it)
+		{
+			if (strncmp(it, "</", 2) == 0)
+			{
+				it += 2;
+				if (strncmp(it, tagStart, tagRealEnd - tagStart) == 0)
+				{
+					break;
+				}
+			}
+		}
+
+		for (; it != end; ++it)
+		{
+			if (*it == '>')
+			{
+				return it;
+			}
+		}
+
+		return nullptr;
+	};
+	auto parseTagContents = [&node, parseTagStop](const char *& start, const char * end)
+	{
+		std::string valueStr;
+		bool prevWhiteSpace = false;
+
 		for (; start != end; ++start)
 		{
-			if (*start == '>')
+			// Parse as usual
+			if (*start == '<')
 			{
-				break;
+				if (*(start + 1) == '/')
+				{
+					break;
+				}
+				// Start new tag parsing
+				node.add(valueStr);
+				valueStr.clear();
+				prevWhiteSpace = false;
+				auto tagEnd = parseTagStop(start, end);
+				node.add(innerParse(start, tagEnd - start));
+				start = tagEnd;
 			}
+			else
+			{
+				if (*start == '\t' || *start == '\n' || *start == ' ')
+				{
+					prevWhiteSpace = true;
+				}
+				else
+				{
+					if (prevWhiteSpace)
+					{
+						valueStr += ' ';
+						prevWhiteSpace = false;
+					}
+					valueStr += *start;
+				}
+			}
+		}
+		if (!valueStr.empty())
+		{
+			node.add(valueStr);
 		}
 	};
 
@@ -941,9 +1039,14 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 		// if found tag, add it to key
 		bool ended;
 		parseTag(start, end, ended);
-		if (ended == false)
+		if (start == end)
 		{
-			parseTagStop(start, end);
+			break;
+		}
+		else if (ended == false && !node.m_tag.empty())
+		{
+			parseTagContents(start, end);
+			break;
 		}
 	}
 

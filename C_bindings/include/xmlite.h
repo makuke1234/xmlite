@@ -83,6 +83,7 @@ xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx);
 
 bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen);
 bool xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen);
+bool xmlite_xmlnode_addNode(xmlite_xmlnode_t * obj, const xmlite_xmlnode_t * other);
 bool xmlite_xmlnode_remove(xmlite_xmlnode_t * obj, size_t idx);
 
 

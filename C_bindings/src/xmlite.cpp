@@ -289,7 +289,7 @@ bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t va
 {
 	try
 	{
-		static_cast<xmlite::xmlnode *>(obj->mem)->add({ val, valLen });
+		static_cast<xmlite::xmlnode *>(obj->mem)->add(std::string{ val, valLen });
 		return true;
 	}
 	catch (std::exception & e)
@@ -303,6 +303,19 @@ bool xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen,
 	try
 	{
 		static_cast<xmlite::xmlnode *>(obj->mem)->add({ key, keyLen }, { val, valLen });
+		return true;
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
+}
+bool xmlite_xmlnode_addNode(xmlite_xmlnode_t * obj, const xmlite_xmlnode_t * other)
+{
+	try
+	{
+		static_cast<xmlite::xmlnode *>(obj->mem)->add(*static_cast<const xmlite::xmlnode *>(other->mem));
 		return true;
 	}
 	catch (std::exception & e)
