@@ -12,7 +12,7 @@ principle and C++11 STL (similar to my other json library [jsonlite](https://git
 Yes, this library is designed to aim for fast compilation times, simplicity and
 ease of use and almost full compliancy with XML standard, nothing else.
 
-This library also supports exceptions, they are designed to give hint about
+This library also supports exceptions, they are designed to give hints about
 syntax errors and to be comprehensive. Every object in this libary uses the
 xmlite::exception as the exception class.
 
