@@ -23,7 +23,7 @@ forwards-compatible with UTF-8 should be OK.
 
 # Features
 
-* DOM support by default
+* DOM-compatible encoding support by default (UTF-8)
 * BOM support:
 	* UTF-1
 	* UTF-7
