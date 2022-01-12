@@ -17,7 +17,7 @@ syntax errors and to be comprehensive. Every object in this libary uses the
 xmlite::exception as the exception class.
 
 Internally all files with any other BOM-marked encoding (listed in *Features* section)
-other than UTF-8 is internally converted to BOM-less UTF-8 (DOM is UTF-8). All non-BOM-marked encodings
+other than UTF-8 are internally converted to BOM-less UTF-8 (DOM is UTF-8). All non-BOM-marked encodings
 forwards-compatible with UTF-8 should be OK.
 
 
