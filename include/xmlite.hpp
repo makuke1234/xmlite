@@ -198,6 +198,11 @@ namespace xmlite
 			return this->m_tag;
 		}
 
+		const ValueVec & values() const noexcept
+		{
+			return this->m_values;
+		}
+
 		AttrMap & attr() noexcept
 		{
 			return this->m_attributes;
@@ -1045,6 +1050,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 		}
 		else if (ended == false && !node.m_tag.empty())
 		{
+			++start;
 			parseTagContents(start, end);
 			break;
 		}
