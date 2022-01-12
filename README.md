@@ -32,9 +32,9 @@ forwards-compatible with UTF-8 should be OK.
 	* UTF-32 (little endian & big endian)
 * BOM to DOM conversion
 * Quite fool-proof, XML files are checked for correctness before parsing.
-* Supports tag attributes, e.g <tag name="John" age="55"></tag>
-* Supports multiple values inside tag, e.g <tag>1st value<anotherTag>Value inside child tag.</anotherTag>3rd value</tag>
-* Supports value-less tags, e.g <tag attr1="attribute 1" attr2="some other attribute" />
+* Supports tag attributes, e.g `<tag name="John" age="55"></tag>`
+* Supports multiple values inside tag, e.g `<tag>1st value<anotherTag>Value inside child tag.</anotherTag>3rd value</tag>`
+* Supports value-less tags, e.g `<tag attr1="attribute 1" attr2="some other attribute" />`
 * [ ] DOM to XML dumping support
 
 
