@@ -8,13 +8,15 @@ namespace inner
 {
 	char * strndup(const char * str, size_t len) noexcept
 	{
+		len = xmlite::strlen(str, len);
+
 		auto mem = static_cast<char *>(std::malloc((len + 1) * sizeof(char)));
 		if (mem == nullptr)
 		{
 			return nullptr;
 		}
 
-		memcpy(mem, str, len);
+		std::memcpy(mem, str, len);
 		mem[len] = '\0';
 
 		return mem;
@@ -207,6 +209,8 @@ const char * xmlite_xmlnode_tagGet(const xmlite_xmlnode_t * obj)
 }
 bool xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t length)
 {
+	length = xmlite::strlen(tag, length);
+
 	try
 	{
 		static_cast<xmlite::xmlnode *>(obj->mem)->tag() = { tag, length };
@@ -221,6 +225,8 @@ bool xmlite_xmlnode_tagPut(xmlite_xmlnode_t * obj, const char * tag, size_t leng
 
 const char * xmlite_xmlnode_attrGet(const xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
 {
+	keyLen = xmlite::strlen(key, keyLen);
+
 	try
 	{
 		return static_cast<const xmlite::xmlnode *>(obj->mem)->attr().at({ key, keyLen }).c_str();
@@ -233,6 +239,9 @@ const char * xmlite_xmlnode_attrGet(const xmlite_xmlnode_t * obj, const char * k
 }
 bool xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * attr, size_t attrLen)
 {
+	keyLen  = xmlite::strlen(key, keyLen);
+
+	attrLen = xmlite::strlen(attr, attrLen);
 	try
 	{
 		static_cast<xmlite::xmlnode *>(obj->mem)->attr()[{ key, keyLen }] = { attr, attrLen };
@@ -246,6 +255,8 @@ bool xmlite_xmlnode_attrPut(xmlite_xmlnode_t * obj, const char * key, size_t key
 }
 bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t keyLen)
 {
+	keyLen = xmlite::strlen(key, keyLen);
+
 	auto & attr = static_cast<xmlite::xmlnode *>(obj->mem)->attr();
 	auto it = attr.find({ key, keyLen });
 	if (it != attr.end())
@@ -261,6 +272,8 @@ bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t 
 
 xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(const xmlite_xmlnode_t * obj, const char * str, size_t length)
 {
+	length = xmlite::strlen(str, length);
+
 	try
 	{
 		const auto & vec = static_cast<const xmlite::xmlnode *>(obj->mem)->at({ str, length });
@@ -304,6 +317,8 @@ size_t xmlite_xmlnode_numValues(const xmlite_xmlnode_t * obj)
 
 bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen)
 {
+	valLen = xmlite::strlen(val, valLen);
+
 	try
 	{
 		static_cast<xmlite::xmlnode *>(obj->mem)->add(std::string{ val, valLen });
@@ -317,6 +332,9 @@ bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t va
 }
 bool xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen)
 {
+	keyLen = xmlite::strlen(key, keyLen);
+	valLen = xmlite::strlen(val, valLen);
+
 	try
 	{
 		static_cast<xmlite::xmlnode *>(obj->mem)->add({ key, keyLen }, { val, valLen });

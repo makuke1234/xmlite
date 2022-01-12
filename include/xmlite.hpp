@@ -12,6 +12,19 @@
 
 namespace xmlite
 {
+	template<typename T>
+	std::size_t strlen(const T * str, std::size_t len) noexcept
+	{
+		if (len == 0)
+		{
+			return std::char_traits<T>::length(str);
+		}
+		else
+		{
+			return len;
+		}
+	}
+
 	inline std::string convertDOM(const char * bomStr, std::size_t length);
 	inline std::string escapeChars(const char * valStr, std::size_t valLen);
 
@@ -85,7 +98,7 @@ namespace xmlite
 		}
 		explicit exception(Type type, const char * extra, std::size_t extraLen)
 			: m_type(type), m_optMsg(this->exceptionMessages[underlying_cast(type)] +
-				std::string(" At: \"") + std::string{ extra, extraLen } + '\"')
+				std::string(" At: \"") + std::string{ extra, strlen(extra, extraLen) } + '\"')
 		{
 		}
 
@@ -357,6 +370,7 @@ namespace xmlite
 
 		xml(const char * xmlFile, std::size_t length)
 		{
+			length = strlen(xmlFile, length);
 			std::string file;
 			
 			const char * start = xmlFile;
@@ -449,6 +463,8 @@ namespace xmlite
 
 inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
 {
+	length = strlen(bomStr, length);
+	
 	auto convertBOM_UTF16 = [](const char * str, std::size_t len)
 	{
 		auto realStr = reinterpret_cast<const char16_t *>(str);
@@ -509,6 +525,8 @@ inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
 }
 inline std::string xmlite::escapeChars(const char * valStr, std::size_t valLen)
 {
+	valLen = strlen(valStr, valLen);
+	
 	std::string esc;
 	esc.reserve(valLen);
 
@@ -647,10 +665,12 @@ inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 
 inline std::string xmlite::UTF32toUTF8(const char32_t * utfStr, std::size_t length)
 {
+	length = strlen(utfStr, length);
+
 	std::string utf8;
 	utf8.reserve(length);
 
-	for (const char32_t * end = utfStr + length; utfStr != end && *utfStr != 0; ++utfStr)
+	for (const char32_t * end = utfStr + length; utfStr != end; ++utfStr)
 	{
 		utf8 += UTF32toUTF8(*utfStr);
 	}
@@ -660,10 +680,12 @@ inline std::string xmlite::UTF32toUTF8(const char32_t * utfStr, std::size_t leng
 }
 inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t length)
 {
+	length = strlen(utfStr, length);
+
 	std::string utf8;
 	utf8.reserve(length);
 
-	for (const char16_t * end = utfStr + length; utfStr != end && *utfStr != u'\0'; ++utfStr)
+	for (const char16_t * end = utfStr + length; utfStr != end; ++utfStr)
 	{
 		bool secondUsed;
 		const char16_t ch2 = ((utfStr + 1) != end) ? *(utfStr + 1) : 0;
@@ -676,6 +698,8 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 }
 inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 {
+	length = strlen(utfStr, length);
+
 	std::string utf8;
 	utf8.reserve(length);
 
@@ -736,7 +760,7 @@ inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 		return chs;
 	};
 
-	for (const char * end = utfStr + length; utfStr != end && *utfStr != '\0'; ++utfStr)
+	for (const char * end = utfStr + length; utfStr != end; ++utfStr)
 	{
 		if (*utfStr == '+')
 		{
@@ -802,6 +826,8 @@ inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 {
 	constexpr std::uint32_t range = 190, range2 = range * range, range3 = range2 * range, range4 = range2 * range2;
 
+	length = strlen(utfStr, length);
+
 	std::string utf8;
 	utf8.reserve(length);
 
@@ -821,7 +847,7 @@ inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 		}
 	};
 
-	for (const char * end = utfStr + length; utfStr != end && *utfStr != '\0'; ++utfStr)
+	for (const char * end = utfStr + length; utfStr != end; ++utfStr)
 	{
 		std::uint8_t ch = *utfStr;
 		// UTF-1 length of 1
@@ -1425,6 +1451,8 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 
 inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::size_t length, bool & init)
 {
+	length = strlen(xmlFile, length);
+
 	init = false;
 	const char * start = xmlFile, * end = xmlFile + length;
 	for (; start != end; ++start)
@@ -1486,7 +1514,7 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 			using tempt = typename std::underlying_type<version>::type;
 			for (tempt i = 0, sz = underlying_cast(version::enum_size); i < sz; ++i)
 			{
-				if (strncmp(start, versionStr[i], strlen(versionStr[i])) == 0)
+				if (strncmp(start, versionStr[i], std::strlen(versionStr[i])) == 0)
 				{
 					init = true;
 					return static_cast<version>(i);
@@ -1499,6 +1527,8 @@ inline xmlite::xml::version xmlite::xml::getVersion(const char * xmlFile, std::s
 }
 inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t length, bool & init)
 {
+	length = strlen(xmlFile, length);
+
 	init = false;
 	
 	auto bom = getBOM(xmlFile, length);
@@ -1588,6 +1618,8 @@ inline std::string xmlite::xml::getEncoding(const char * xmlFile, std::size_t le
 }
 inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length, bool & init)
 {
+	length = strlen(xmlFile, length);
+	
 	init = false;
 	const char * start = xmlFile, * end = xmlFile + length;
 	for (; start != end; ++start)
@@ -1672,6 +1704,8 @@ inline bool xmlite::xml::getStandalone(const char * xmlFile, std::size_t length,
 }
 inline std::int8_t xmlite::xml::getBOM(const char * xmlFile, std::size_t length)
 {
+	length = strlen(xmlFile, length);
+
 	static constexpr const std::uint8_t BOMS[][5]
 	{
 		{ 0xFF, 0xFE, 0x00, 0x00 },
