@@ -13,6 +13,7 @@
 namespace xmlite
 {
 	inline std::string convertDOM(const char * bomStr, std::size_t length);
+	inline std::string escapeChars(const char * valStr, std::size_t valLen);
 
 	inline std::string UTF32toUTF8(char32_t utfCh);
 	inline std::uint32_t UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool & secondUsed) noexcept;
@@ -48,6 +49,7 @@ namespace xmlite
 			ParseIncorrectHeaderTerminator,
 			ParseIncorrectTag,
 			ParseIncorrectComment,
+			ParseIncorrectEscapeCharacter,
 			ParseNoTerminatingTag,
 			ParseNoTerminatingQuote,
 			ParseTooManyRoots,
@@ -69,6 +71,7 @@ namespace xmlite
 			"Incorrect XML header terminator!",
 			"Incorrect tag!",
 			"Incorrect comment format!",
+			"Incorrect escape character!",
 			"No tag terminator found!",
 			"No terminating '\"' found!",
 			"Too many root elements!",
@@ -198,11 +201,6 @@ namespace xmlite
 			return this->m_tag;
 		}
 
-		const ValueVec & values() const noexcept
-		{
-			return this->m_values;
-		}
-
 		AttrMap & attr() noexcept
 		{
 			return this->m_attributes;
@@ -244,6 +242,11 @@ namespace xmlite
 		const xmlnode & operator[](std::size_t idx) const noexcept
 		{
 			return this->m_values[idx];
+		}
+
+		std::size_t numValues() const noexcept
+		{
+			return this->m_values.size();
 		}
 
 		void add(const std::string & value)
@@ -504,11 +507,84 @@ inline std::string xmlite::convertDOM(const char * bomStr, std::size_t length)
 		return { bomStr, length };
 	}
 }
+inline std::string xmlite::escapeChars(const char * valStr, std::size_t valLen)
+{
+	std::string esc;
+	esc.reserve(valLen);
+
+	auto escapeChar = [&esc](const char *& start, const char * end)
+	{
+		if (*start != '&')
+		{
+			return;
+		}
+		++start;
+		if (*start == '#')
+		{
+			// Numbers
+			++start;
+			esc += UTFCodePointToUTF8(std::uint32_t(atoi(start)));
+			for (; start != end; ++start)
+			{
+				if (*start == ';')
+				{
+					break;
+				}
+			}
+		}
+		else
+		{
+			if (strncmp(start, "lt;", 3) == 0)
+			{
+				esc += '<';
+				start += 2;
+			}
+			else if (strncmp(start, "gt;", 3) == 0)
+			{
+				esc += '>';
+				start += 2;
+			}
+			else if (strncmp(start, "quot;", 5) == 0)
+			{
+				esc += '"';
+				start += 4;
+			}
+			else if (strncmp(start, "apos;", 5) == 0)
+			{
+				esc += '\'';
+				start += 4;
+			}
+			else if (strncmp(start, "amp;", 4) == 0)
+			{
+				esc += '&';
+				start += 3;
+			}
+		}
+
+	};
+
+	for (const char * end = valStr + valLen; valStr != end; ++valStr)
+	{
+		if (*valStr == '&')
+		{
+			// escape
+			escapeChar(valStr, end);
+		}
+		else
+		{
+			// Just add character to end
+			esc += *valStr;
+		}
+	}
+	esc.shrink_to_fit();
+	return esc;
+}
 
 
 inline std::string xmlite::UTF32toUTF8(char32_t c)
 {
 	std::string utf8;
+	utf8.reserve(1);
 
 	using u8 = typename std::uint8_t;
 
@@ -541,6 +617,7 @@ inline std::uint32_t xmlite::UTF16toCodePoint(char16_t ch1, char16_t optCh2, boo
 inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 {
 	std::string utf8;
+	utf8.reserve(1);
 
 	if (c <= 0x7F)
 	{
@@ -571,15 +648,21 @@ inline std::string xmlite::UTFCodePointToUTF8(std::uint32_t c)
 inline std::string xmlite::UTF32toUTF8(const char32_t * utfStr, std::size_t length)
 {
 	std::string utf8;
+	utf8.reserve(length);
+
 	for (const char32_t * end = utfStr + length; utfStr != end && *utfStr != 0; ++utfStr)
 	{
 		utf8 += UTF32toUTF8(*utfStr);
 	}
+
+	utf8.shrink_to_fit();
 	return utf8;
 }
 inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t length)
 {
 	std::string utf8;
+	utf8.reserve(length);
+
 	for (const char16_t * end = utfStr + length; utfStr != end && *utfStr != u'\0'; ++utfStr)
 	{
 		bool secondUsed;
@@ -588,11 +671,13 @@ inline std::string xmlite::UTF16toUTF8(const char16_t * utfStr, std::size_t leng
 		utfStr += secondUsed;
 	}
 
+	utf8.shrink_to_fit();
 	return utf8;
 }
 inline std::string xmlite::UTF7toUTF8(const char * utfStr, std::size_t length)
 {
 	std::string utf8;
+	utf8.reserve(length);
 
 	auto fromBase64 = [](char ch)
 	{
@@ -718,6 +803,7 @@ inline std::string xmlite::UTF1toUTF8(const char * utfStr, std::size_t length)
 	constexpr std::uint32_t range = 190, range2 = range * range, range3 = range2 * range, range4 = range2 * range2;
 
 	std::string utf8;
+	utf8.reserve(length);
 
 	auto toUTF1Range = [](std::uint8_t ch) -> std::uint8_t
 	{
@@ -1255,6 +1341,43 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 
 		throw exception(exception::Type::ParseIncorrectComment);
 	};
+
+	auto checkEscape = [](const char *& s, const char * end)
+	{
+		if (*s != '&')
+		{
+			return;
+		}
+		++s;
+		if (*s == '#')
+		{
+			++s;
+			for (; s != end; ++s)
+			{
+				if (*s == ';')
+				{
+					++s;
+					break;
+				}
+				else if (!(*s >= '0' && *s <= '9'))
+				{
+					throw exception(exception::Type::ParseIncorrectEscapeCharacter);
+				}
+			}
+		}
+		else
+		{
+			// Letters
+			if (strncmp(s, "lt;", 3) != 0 && strncmp(s, "gt;", 3) != 0 &&
+				strncmp(s, "quot;", 5) != 0 && strncmp(s, "amp;", 4) != 0 &&
+				strncmp(s, "apos;", 5) != 0
+			)
+			{
+				throw exception(exception::Type::ParseIncorrectEscapeCharacter);
+			}
+			s += 3;
+		}
+	};
 	
 	std::size_t emptyCount = 0;
 
@@ -1278,6 +1401,10 @@ inline void xmlite::xml::innerCheck(const char * xml, std::size_t len)
 		else if (((start + 1) != end) && *start == '<' && *(start + 1) == '/')
 		{
 			checkTagEnd(start, end);
+		}
+		else if (*start == '&')
+		{
+			checkEscape(start, end);
 		}
 		else
 		{

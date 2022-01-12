@@ -17,6 +17,7 @@ extern "C"
 const char * xmlite_lastErr();
 
 char * xmlite_convertDOM(const char * bomStr, size_t length);
+char * xmlite_escapeChars(const char * valStr, size_t valLen);
 
 char * xmlite_UTF32toUTF8Ch(char32_t utfCh);
 uint32_t xmlite_UTF16toCodePoint(char16_t ch1, char16_t optCh2, bool * secondUsed);
@@ -80,6 +81,8 @@ typedef struct xmlite_xmlnode_IdxVec
 xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(const xmlite_xmlnode_t * obj, const char * str, size_t length);
 xmlite_xmlnode_constref_t xmlite_xmlnode_atNum(const xmlite_xmlnode_t * obj, size_t idx);
 xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx);
+
+size_t xmlite_xmlnode_numValues(const xmlite_xmlnode_t * obj);
 
 bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen);
 bool xmlite_xmlnode_add(xmlite_xmlnode_t * obj, const char * key, size_t keyLen, const char * val, size_t valLen);

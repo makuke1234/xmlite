@@ -61,15 +61,20 @@ int main(int argc, char ** argv)
 			continue;
 		}
 
-		const auto & nameValues = person.at(names.front()).values();
-		const auto & ageValues  = person.at(ages.front()).values();
-		if (nameValues.empty() || ageValues.empty())
+		const auto & name = person.at(names.front());
+		const auto & age  = person.at(ages.front());
+		auto numNames = name.numValues();
+		auto numAges  = age.numValues();
+		if (!numNames || !numAges)
 		{
 			continue;
 		}
 
+		const auto & nStr = name[0].tag();
+		const auto & aStr = age[0].tag();
 
-		std::cout << "Name: " << nameValues.front().tag() << "; Age: " << ageValues.front().tag() << std::endl;
+		std::cout << "Name: " << xmlite::escapeChars(nStr.c_str(), nStr.length()) << "; ";
+		std::cout << "Age: " << xmlite::escapeChars(aStr.c_str(), aStr.length()) << '\n';
 	}
 
 	return 0;

@@ -48,6 +48,18 @@ char * xmlite_convertDOM(const char * bomStr, size_t length)
 		return nullptr;
 	}
 }
+char * xmlite_escapeChars(const char * valStr, size_t valLen)
+{
+	try
+	{
+		return inner::strconv(xmlite::escapeChars(valStr, valLen));
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return nullptr;
+	}
+}
 
 char * xmlite_UTF32toUTF8Ch(char32_t utfCh)
 {
@@ -283,6 +295,11 @@ xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx)
 		inner::s_lastException = std::move(e);
 		return { nullptr };
 	}
+}
+
+size_t xmlite_xmlnode_numValues(const xmlite_xmlnode_t * obj)
+{
+	return static_cast<const xmlite::xmlnode *>(obj->mem)->numValues();
 }
 
 bool xmlite_xmlnode_addValue(xmlite_xmlnode_t * obj, const char * val, size_t valLen)
