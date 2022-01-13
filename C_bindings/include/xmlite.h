@@ -78,6 +78,7 @@ typedef struct xmlite_xmlnode_IdxVec
 
 } xmlite_xmlnode_IdxVec_t;
 
+bool xmlite_xmlnode_exists(const xmlite_xmlnode_t * obj, const char * str, size_t strLen);
 xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(const xmlite_xmlnode_t * obj, const char * str, size_t length);
 xmlite_xmlnode_constref_t xmlite_xmlnode_atNum(const xmlite_xmlnode_t * obj, size_t idx);
 xmlite_xmlnode_ref_t xmlite_xmlnode_idxNum(xmlite_xmlnode_t * obj, size_t idx);

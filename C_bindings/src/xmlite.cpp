@@ -270,6 +270,20 @@ bool xmlite_xmlnode_attrRemove(xmlite_xmlnode_t * obj, const char * key, size_t 
 	}
 }
 
+bool xmlite_xmlnode_exists(const xmlite_xmlnode_t * obj, const char * str, size_t strLen)
+{
+	strLen = xmlite::strlen(str, strLen);
+	
+	try
+	{
+		return static_cast<const xmlite::xmlnode *>(obj->mem)->exists({ str, strLen });
+	}
+	catch (std::exception & e)
+	{
+		inner::s_lastException = std::move(e);
+		return false;
+	}
+}
 xmlite_xmlnode_IdxVec_t xmlite_xmlnode_atStr(const xmlite_xmlnode_t * obj, const char * str, size_t length)
 {
 	length = xmlite::strlen(str, length);

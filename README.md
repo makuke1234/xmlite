@@ -1,6 +1,6 @@
 # xmlite
 
-![Release version](https://img.shields.io/badge/alpha-v0.9.1-green.svg)
+![Release version](https://img.shields.io/badge/alpha-v0.9.2-green.svg)
 ![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
 
 A light-weight single-include C++ XML library, relying on KISS (Keep It Stupid Simple)

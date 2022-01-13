@@ -7,8 +7,6 @@
 #include <type_traits>
 #include <exception>
 
-#include <iostream>
-
 #include <cstring>
 #include <cstdint>
 
@@ -233,6 +231,10 @@ namespace xmlite
 			return this->m_attributes;
 		}
 
+		bool exists(const std::string & str) const noexcept
+		{
+			return this->m_idxMap.find(str) != this->m_idxMap.end();
+		}
 		const IdxVec & at(const std::string & str) const
 		{
 			return this->m_idxMap.at(str);
@@ -1057,7 +1059,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 					{
 						ended = true;
 					}
-					tagEnd = it - ended;
+					tagEnd = it + 1;
 					break;
 				}
 			}
@@ -1174,6 +1176,10 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			parseTagContents(start, end);
 			break;
 		}
+		else if (ended == true)
+		{
+			++start;
+		}
 	}
 
 	return node;
@@ -1216,22 +1222,11 @@ inline xmlite::xmlnode::xmlnode(const char * xmlFile, std::size_t length)
 
 inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 {
-	if (this->m_role == objtype::EndPoint)
+	if (this->m_role == objtype::Object)
 	{
 		std::string str;
-		for (std::size_t i = 0; i < depth; ++i)
-		{
-			str += '\t';
-		}
-		return str + this->m_tag;
-	}
-	else if (this->m_role == objtype::Object)
-	{
-		std::string str;
-		for (std::size_t i = 0; i < depth; ++i)
-		{
-			str += '\t';
-		}
+		str.append(depth, '\t');
+		
 		str += '<' + this->m_tag;
 		for (const auto & i : this->m_attributes)
 		{
@@ -1240,7 +1235,7 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 
 		str += '>';
 
-		for (auto i : this->m_values)
+		for (const auto & i : this->m_values)
 		{
 			str += '\n';
 			str += i.innerDump(depth + 1);
@@ -1253,6 +1248,24 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 		}
 		str += "</" + this->m_tag + '>';
 		
+		return str;
+	}
+	else if (this->m_role == objtype::EndPoint)
+	{
+		return std::string(depth, '\t') + this->m_tag;
+	}
+	else if (!this->m_attributes.empty())
+	{
+		std::string str;
+		str.append(depth, '\t');
+
+		str += '<' + this->m_tag;
+		for (const auto & i : this->m_attributes)
+		{
+			str += ' ' + i.first + "=\"" + i.second + '"';
+		}
+		str += "/>";
+
 		return str;
 	}
 	else
