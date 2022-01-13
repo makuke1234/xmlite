@@ -12,8 +12,8 @@ debug: test.cpp
 	$(CXX) $^ -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) -static
 
 debugc: test.c
-	$(CC) $^ -c -o test.o $(CDEFFLAGS) $(CDEBFLAGS)
-	$(CXX) test.o -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) $(LIB) -static
+	$(CC) $^ -c -o testc.o $(CDEFFLAGS) $(CDEBFLAGS)
+	$(CXX) testc.o -o testc.exe $(CXXDEFFLAGS) $(CDEBFLAGS) $(LIB) -static
 
 clean:
 	del *.o

@@ -69,6 +69,13 @@ int main(int argc, char ** argv)
 	for (size_t i = 0; i < persons.size; ++i)
 	{
 		xmlite_xmlnode_constref_t person = xmlite_xmlnode_atNum(&xmlNode.base, persons.data[i]);
+		if (xmlite_xmlnode_exists(&person.base, "name", 0) == false ||
+			xmlite_xmlnode_exists(&person.base, "age", 0) == false
+		)
+		{
+			continue;
+		}
+		
 		xmlite_xmlnode_IdxVec_t names = xmlite_xmlnode_atStr(&person.base, "name", 0);
 		xmlite_xmlnode_IdxVec_t ages  = xmlite_xmlnode_atStr(&person.base, "age", 0);
 
