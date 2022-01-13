@@ -6,7 +6,7 @@
 
 namespace inner
 {
-	char * strndup(const char * str, size_t len) noexcept
+	static char * strndup(const char * str, size_t len) noexcept
 	{
 		len = xmlite::strlen(str, len);
 
@@ -22,7 +22,7 @@ namespace inner
 		return mem;
 	}
 
-	char * strconv(const std::string & str) noexcept
+	static char * strconv(const std::string & str) noexcept
 	{
 		return inner::strndup(str.c_str(), str.length());
 	}
