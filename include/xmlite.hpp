@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <exception>
 
+#include <iostream>
+
 #include <cstring>
 #include <cstdint>
 
@@ -284,7 +286,8 @@ namespace xmlite
 		{
 			auto idx = this->m_values.size();
 			this->m_values.emplace_back(other);
-			this->m_idxMap[this->m_values.back().m_tag].push_back(idx);
+			this->m_idxMap[other.m_tag].push_back(idx);
+			this->m_role = objtype::Object;
 		}
 		bool remove(std::size_t idx) noexcept
 		{
@@ -450,7 +453,7 @@ namespace xmlite
 
 		std::string dump() const
 		{
-			return this->dumpHeader() + this->m_nodes.dump();
+			return this->dumpHeader() + '\n' + this->m_nodes.dump();
 		}
 
 	};
@@ -961,7 +964,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 		const char * it = tagStart + 1, * tagRealEnd = tagEnd;
 		for (; it != tagEnd; ++it)
 		{
-			if (*it == ' ' || *it == '\n' || *it == '\t')
+			if (*it == ' ' || *it == '\n' || *it == '\t' || *it == '\r')
 			{
 				tagRealEnd = it;
 				break;
@@ -983,7 +986,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			const char * attrStart = nullptr, * attrEnd = nullptr;
 			for (; it != tagEnd; ++it)
 			{
-				if (!(*it == ' ' || *it == '\n' || *it == '\t'))
+				if (!(*it == ' ' || *it == '\n' || *it == '\t' || *it == '\r'))
 				{
 					// Attribute start
 					attrStart = it;
@@ -992,7 +995,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 			}
 			for (; it != tagEnd; ++it)
 			{
-				if (*it == ' ' || *it == '\n' || *it == '\t' || *it == '=')
+				if (*it == ' ' || *it == '\n' || *it == '\t' || *it == '=' || *it == '\r')
 				{
 					attrEnd = it;
 					break;
@@ -1068,7 +1071,7 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 		const char * tagRealEnd = tagEnd;
 		for (; it != tagEnd; ++it)
 		{
-			if (*it == ' ' || *it == '\n' || *it == '\t')
+			if (*it == ' ' || *it == '\n' || *it == '\t' || *it == '\r')
 			{
 				tagRealEnd = it;
 				break;
@@ -1118,16 +1121,21 @@ inline xmlite::xmlnode xmlite::xmlnode::innerParse(const char * xml, std::size_t
 					break;
 				}
 				// Start new tag parsing
-				node.add(valueStr);
-				valueStr.clear();
+				if (!valueStr.empty())
+				{
+					node.add(valueStr);
+					valueStr.clear();
+				}
 				prevWhiteSpace = false;
+
 				auto tagEnd = parseTagStop(start, end);
-				node.add(innerParse(start, tagEnd - start));
+				auto parsedNode = innerParse(start, tagEnd - start);
+				node.add(parsedNode);
 				start = tagEnd;
 			}
 			else
 			{
-				if (*start == '\t' || *start == '\n' || *start == ' ')
+				if (*start == '\t' || *start == '\n' || *start == ' ' || *start == '\r')
 				{
 					prevWhiteSpace = true;
 				}
@@ -1224,19 +1232,20 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 		{
 			str += '\t';
 		}
-		str += '<' + this->m_tag + ">\n";
+		str += '<' + this->m_tag + ">";
 
 		for (auto i : this->m_values)
 		{
-			str += i.innerDump(depth + 1);
 			str += '\n';
+			str += i.innerDump(depth + 1);
 		}
 
+		str += '\n';
 		for (std::size_t i = 0; i < depth; ++i)
 		{
 			str += '\t';
 		}
-		str += "</" + this->m_tag + ">\n";
+		str += "</" + this->m_tag + ">";
 		
 		return str;
 	}
