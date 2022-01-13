@@ -1232,7 +1232,13 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 		{
 			str += '\t';
 		}
-		str += '<' + this->m_tag + ">";
+		str += '<' + this->m_tag;
+		for (const auto & i : this->m_attributes)
+		{
+			str += ' ' + i.first + "=\"" + i.second + '"';
+		}
+
+		str += '>';
 
 		for (auto i : this->m_values)
 		{
@@ -1245,7 +1251,7 @@ inline std::string xmlite::xmlnode::innerDump(std::size_t depth) const
 		{
 			str += '\t';
 		}
-		str += "</" + this->m_tag + ">";
+		str += "</" + this->m_tag + '>';
 		
 		return str;
 	}
