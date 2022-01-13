@@ -54,6 +54,11 @@ int main(int argc, char ** argv)
 	for (auto i : persons)
 	{
 		const auto & person = xmlObject.get().at(i);
+		if (person.exists("name") == false || person.exists("age") == false)
+		{
+			continue;
+		}
+
 		const auto & names = person.at("name");
 		const auto & ages  = person.at("age");
 		if (names.empty() || ages.empty())
