@@ -36,6 +36,7 @@ forwards-compatible with UTF-8 should be OK.
 * Supports multiple values inside tag, e.g `<tag>1st value<anotherTag>Value inside child tag.</anotherTag>3rd value</tag>`
 * Supports value-less tags, e.g `<tag attr1="attribute 1" attr2="some other attribute" />`
 * DOM to XML dumping support
+* CRLF/LF/CR neutrality -> all dumps are LF
 
 
 # C bindings
