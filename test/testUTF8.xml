@@ -8,4 +8,5 @@
 		<name>Gabriel</name>
 		<age>35</age>
 	</person>
+	<person tag="end-less tag" info="no other"/>
 </catalog>
