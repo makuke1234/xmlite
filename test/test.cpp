@@ -77,5 +77,7 @@ int main(int argc, char ** argv)
 		std::cout << "Age: " << xmlite::escapeChars(aStr.c_str(), aStr.length()) << '\n';
 	}
 
+	std::cout << "Reconstructed file:\n" << xmlObject.dump() << std::endl;
+
 	return 0;
 }

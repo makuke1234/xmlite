@@ -95,6 +95,17 @@ int main(int argc, char ** argv)
 		printf("Name: %s; Age: %s\n", nameStr, ageStr);
 	}
 
+	char * dump = xmlite_xml_dump(&xmlObject);
+	if (dump == NULL)
+	{
+		fprintf(stderr, "Exception occurred!\n%s\n", xmlite_lastErr());
+		return 5;
+	}
+
+	
+	printf("Reconstructed file:\n%s\n", dump);
+	free(dump);
+
 	xmlite_xml_free(&xmlObject);
 
 	return 0;

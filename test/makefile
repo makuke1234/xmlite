@@ -9,11 +9,11 @@ LIB=-lxmlite -L"../C_bindings/bin/"
 default: debug
 
 debug: test.cpp
-	$(CXX) $^ -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS)
+	$(CXX) $^ -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) -static
 
 debugc: test.c
 	$(CC) $^ -c -o test.o $(CDEFFLAGS) $(CDEBFLAGS)
-	$(CXX) test.o -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) $(LIB)
+	$(CXX) test.o -o test.exe $(CXXDEFFLAGS) $(CDEBFLAGS) $(LIB) -static
 
 clean:
 	del *.o
