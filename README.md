@@ -1,6 +1,6 @@
 # xmlite
 
-![Release version](https://img.shields.io/badge/alpha-v0.9.0-yellow.svg)
+![Release version](https://img.shields.io/badge/alpha-v0.9.1-green.svg)
 ![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
 
 A light-weight single-include C++ XML library, relying on KISS (Keep It Stupid Simple)
@@ -35,7 +35,7 @@ forwards-compatible with UTF-8 should be OK.
 * Supports tag attributes, e.g `<tag name="John" age="55"></tag>`
 * Supports multiple values inside tag, e.g `<tag>1st value<anotherTag>Value inside child tag.</anotherTag>3rd value</tag>`
 * Supports value-less tags, e.g `<tag attr1="attribute 1" attr2="some other attribute" />`
-* [ ] DOM to XML dumping support
+* DOM to XML dumping support
 
 
 # C bindings
